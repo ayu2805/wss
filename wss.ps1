@@ -119,5 +119,5 @@ do {
     
 } while ($true)
 
+Set-Location ..
 Remove-Item -Recurse -Path "~\Downloads\Windows Setup Script"
-Write-Host "Installation Complete"
