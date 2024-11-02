@@ -67,7 +67,8 @@ function Show-Menu {
     Write-Host "2. Install Firefox"
     Write-Host "3. Install Google Chrome"
     Write-Host "4. Install Microsoft Office 365"
-    Write-Host "5. Install Visual Studio Code"
+    Write-Host "5. Install Telegram"
+    Write-Host "6. Install Visual Studio Code"
     Write-Host "`nYou can select multiple options:"
     Write-Host "- Single numbers (e.g., 1,3,5)"
     Write-Host "- Ranges (e.g., 1-3)"
@@ -84,8 +85,9 @@ function Execute-Command {
         1 = 'curl -#Lo CloudlflareWarp.msi "https://1111-releases.cloudflareclient.com/win/latest" && msiexec /i CloudlflareWarp.msi'
         2 = 'curl -#Lo FirefoxSetup.exe "https://download.mozilla.org/?product=firefox-latest&os=win64" && FirefoxSetup.exe'
         3 = 'curl -#Lo GoogleChrome.msi "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi" && msiexec /i GoogleChrome.msi'
-        4 = 'curl -#LO "https://officecdn.microsoft.com/pr/wsus/setup.exe" && setup.exe /configure Configuration.xml && rm setup.exe Configuration.xml'
-        5 = 'curl -#Lo VSCodeSetup.exe "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64" && VSCodeSetup.exe'
+        4 = 'curl -#LO "https://officecdn.microsoft.com/pr/wsus/setup.exe" && setup.exe /configure Configuration.xml'
+        5 = 'curl -#Lo TelegramSetup.exe "https://telegram.org/dl/desktop/win64" && TelegramSetup.exe'
+        6 = 'curl -#Lo VSCodeSetup.exe "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64" && VSCodeSetup.exe'
     }
     
     if ($commands.ContainsKey($option)) {
