@@ -8,8 +8,8 @@ if (-not $isAdmin) {
     $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
     exit
 }
-New-Item -ItemType Directory -Path "~\Downloads\" -Name "Windows Setup Script"
-Set-Location "~\Downloads\Windows Setup Script"
+New-Item -ItemType Directory -Path "~\Downloads\" -Name "Windows Setup"
+Set-Location "~\Downloads\Windows Setup"
 $filePath="Configuration.xml"
 $config=@"
 <Configuration ID="35d3badb-d62d-4bf5-8438-0b3ee0766659">
@@ -119,5 +119,7 @@ do {
     
 } while ($true)
 
-Set-Location ..
-Remove-Item -Recurse -Path "~\Downloads\Windows Setup Script"
+Write-Host 'You can now manually delete the "Windows Setup" inside Downloads directory'
+Write-Host -ForegroundColor White "Press any key to close this window..."
+$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+exit
