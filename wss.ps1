@@ -122,6 +122,4 @@ do {
 } while ($true)
 
 Write-Host 'You can now manually delete the "Windows Setup" inside Downloads directory'
-Write-Host -ForegroundColor White "Press any key to close this window..."
-$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
 exit
