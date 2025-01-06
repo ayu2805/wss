@@ -122,4 +122,3 @@ do {
 } while ($true)
 
 Write-Host 'You can now manually delete the "Windows Setup" inside Downloads directory'
-exit
