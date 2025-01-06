@@ -105,7 +105,7 @@ do {
     
     $selectedOptions = Parse-MenuSelection $choice
     
-    $validOptions = $selectedOptions | Where-Object { $_ -ge 1 -and $_ -le 5 }
+    $validOptions = $selectedOptions | Where-Object { $_ -ge 1 -and $_ -le 6 }
     
     if ($validOptions.Count -eq 0) {
         Write-Host "Invalid selection. Please try again."
