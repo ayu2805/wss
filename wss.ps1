@@ -8,10 +8,13 @@ if (-not $isAdmin) {
     $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
     exit
 }
-New-Item -ItemType Directory -Path "~\Downloads\" -Name "Windows Setup"
-Set-Location "~\Downloads\Windows Setup"
-$filePath="Configuration.xml"
-$config=@"
+
+$setupPath = "$HOME\Downloads\Windows Setup"
+New-Item -ItemType Directory -Path $setupPath -Force
+Set-Location $setupPath
+
+$filePath = "Configuration.xml"
+$config = @"
 <Configuration ID="35d3badb-d62d-4bf5-8438-0b3ee0766659">
   <Add OfficeClientEdition="64" Channel="Current">
     <Product ID="O365ProPlusRetail">
@@ -33,10 +36,8 @@ $config=@"
 "@
 
 if (-not (Test-Path -Path $filePath)) {
-    New-Item -ItemType File -Path $filePath -Force
+    $config | Out-File -FilePath $filePath -Force
 }
-
-Set-Content -Path $filePath -Value $config
 
 function Parse-MenuSelection {
     param (
@@ -63,6 +64,7 @@ function Parse-MenuSelection {
 function Show-Menu {
     Clear-Host
     Write-Host "=== Menu Options ==="
+    Write-Host "0. Quit"
     Write-Host "1. Install Cloudflare Warp"
     Write-Host "2. Install Firefox"
     Write-Host "3. Install Google Chrome"
@@ -73,7 +75,6 @@ function Show-Menu {
     Write-Host "- Single numbers (e.g., 1,3,5)"
     Write-Host "- Ranges (e.g., 1-3)"
     Write-Host "- Combinations (e.g., 1-3,5)"
-    Write-Host "`nEnter 'q' to quit"
 }
 
 function Execute-Command {
@@ -81,17 +82,13 @@ function Execute-Command {
         [int]$option
     )
     
-    $commands = @{
-        1 = 'curl -#Lo CloudlflareWarp.msi "https://1111-releases.cloudflareclient.com/win/latest" && msiexec /i CloudlflareWarp.msi'
-        2 = 'curl -#Lo FirefoxSetup.exe "https://download.mozilla.org/?product=firefox-latest&os=win64" && FirefoxSetup.exe'
-        3 = 'curl -#Lo GoogleChrome.msi "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi" && msiexec /i GoogleChrome.msi'
-        4 = 'curl -#LO "https://officecdn.microsoft.com/pr/wsus/setup.exe" && setup.exe /configure Configuration.xml'
-        5 = 'curl -#Lo TelegramSetup.exe "https://telegram.org/dl/desktop/win64" && TelegramSetup.exe'
-        6 = 'curl -#Lo VSCodeSetup.exe "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64" && VSCodeSetup.exe'
-    }
-    
-    if ($commands.ContainsKey($option)) {
-        Start-Process cmd -ArgumentList "/c $($commands[$option])"
+    switch ($option) {
+        1 { Start-Process -FilePath "cmd.exe" -ArgumentList '/c curl -#Lo CloudflareWarp.msi "https://1111-releases.cloudflareclient.com/win/latest" && msiexec /i CloudflareWarp.msi' }
+        2 { Start-Process -FilePath "cmd.exe" -ArgumentList '/c curl -#Lo FirefoxSetup.exe "https://download.mozilla.org/?product=firefox-latest&os=win64" && FirefoxSetup.exe' }
+        3 { Start-Process -FilePath "cmd.exe" -ArgumentList '/c curl -#Lo GoogleChrome.msi "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi" && msiexec /i GoogleChrome.msi' }
+        4 { Start-Process -FilePath "cmd.exe" -ArgumentList '/c curl -#LO "https://officecdn.microsoft.com/pr/wsus/setup.exe" && setup.exe /configure Configuration.xml' }
+        5 { Start-Process -FilePath "cmd.exe" -ArgumentList '/c curl -#Lo TelegramSetup.exe "https://telegram.org/dl/desktop/win64" && TelegramSetup.exe' }
+        6 { Start-Process -FilePath "cmd.exe" -ArgumentList '/c curl -#Lo VSCodeSetup.exe "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64" && VSCodeSetup.exe' }
     }
 }
 
@@ -99,26 +96,22 @@ do {
     Show-Menu
     $choice = Read-Host "`nEnter your selection"
     
-    if ($choice -eq 'q') {
+    if ($choice -eq '0') {
         break
     }
     
     $selectedOptions = Parse-MenuSelection $choice
-    
     $validOptions = $selectedOptions | Where-Object { $_ -ge 1 -and $_ -le 6 }
     
     if ($validOptions.Count -eq 0) {
         Write-Host "Invalid selection. Please try again."
-        pause
         continue
     }
     
     foreach ($option in $validOptions) {
         Execute-Command $option
     }
-    
-    break
-    
+
 } while ($true)
 
 Write-Host 'You can now manually delete the "Windows Setup" inside Downloads directory'
