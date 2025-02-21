@@ -9,6 +9,33 @@ if (-not $isAdmin) {
   exit
 }
 
+$newComputerName = Read-Host "Please enter the new computer name (leave empty to do nothing)"
+if (-not [string]::IsNullOrWhiteSpace($newComputerName)) {
+    if ($newComputerName -match '^[a-zA-Z0-9-]+$' -and $newComputerName.Length -le 15) {
+        Rename-Computer -NewName $newComputerName
+    }
+    else {
+        Write-Host "Invalid computer name. Please ensure it contains only letters, numbers, and hyphens, and is no longer than 15 characters."
+    }
+}
+else {
+    Write-Host "No new computer name entered. Exiting without changes."
+}
+
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v EnableSnapAssistFlyout /d 0 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v EnableSnapBar /d 0 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v MultiTaskingAltTabFilter /d 0 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\TaskbarDeveloperSettings /t REG_DWORD /v TaskbarEndTask /d 1 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v HideFileExt /d 0 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v Hidden /d 1 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v LaunchTo /d 1 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer /t REG_DWORD /v ShowRecent /d 0 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer /t REG_DWORD /v ShowFrequent /d 0 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer /t REG_DWORD /v ShowCloudFilesInQuickAccess /d 0 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v ShowTaskViewButton /d 0 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Search /t REG_DWORD /v SearchboxTaskbarMode /d 0 /f
+sudo config --enable normal
+
 $setupPath = "$HOME\Downloads\Windows Setup"
 New-Item -ItemType Directory -Path $setupPath -Force
 Set-Location $setupPath
