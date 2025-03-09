@@ -41,6 +41,7 @@ reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer /t 
 reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v ShowTaskViewButton /d 0 /f
 reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Search /t REG_DWORD /v SearchboxTaskbarMode /d 0 /f
 reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize /t REG_DWORD /v EnableTransparency /d 0 /f
+reg add HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System /t REG_DWORD /v ConsentPromptBehaviorAdmin /d 5 /f
 sudo config --enable normal
 
 # Create setup directory and configuration file
