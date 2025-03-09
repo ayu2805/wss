@@ -1,3 +1,4 @@
+# Check if running with administrative privileges
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 $isAdmin = $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
@@ -9,39 +10,52 @@ if (-not $isAdmin) {
   exit
 }
 
+# Prompt for new computer name
 $newComputerName = Read-Host "Please enter the new computer name (leave empty to do nothing)"
 if (-not [string]::IsNullOrWhiteSpace($newComputerName)) {
-    if ($newComputerName -match '^[a-zA-Z0-9-]+$' -and $newComputerName.Length -le 15) {
-        Rename-Computer -NewName $newComputerName
+  if ($newComputerName -match '^[a-zA-Z0-9-]+$' -and $newComputerName.Length -le 15) {
+    Rename-Computer -NewName $newComputerName
+    if ($?) {
+      Write-Host "Computer name changed successfully to $newComputerName."
+    } else {
+      Write-Host "Failed to change computer name." -ForegroundColor Red
     }
-    else {
-        Write-Host "Invalid computer name. Please ensure it contains only letters, numbers, and hyphens, and is no longer than 15 characters."
-    }
-}
-else {
-    Write-Host "No new computer name entered. Exiting without changes."
+  } else {
+    Write-Host "Invalid computer name. Please ensure it contains only letters, numbers, and hyphens, and is no longer than 15 characters." -ForegroundColor Red
+  }
+} else {
+  Write-Host "No new computer name entered. Exiting without changes."
 }
 
-reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v EnableSnapAssistFlyout /d 0 /f
-reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v EnableSnapBar /d 0 /f
-reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v MultiTaskingAltTabFilter /d 0 /f
-reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\TaskbarDeveloperSettings /t REG_DWORD /v TaskbarEndTask /d 1 /f
-reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v HideFileExt /d 0 /f
-reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v Hidden /d 1 /f
-reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v LaunchTo /d 1 /f
-reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer /t REG_DWORD /v ShowRecent /d 0 /f
-reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer /t REG_DWORD /v ShowFrequent /d 0 /f
-reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer /t REG_DWORD /v ShowCloudFilesInQuickAccess /d 0 /f
-reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v ShowTaskViewButton /d 0 /f
-reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Search /t REG_DWORD /v SearchboxTaskbarMode /d 0 /f
-reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize /t REG_DWORD /v EnableTransparency /d 0 /f
-sudo config --enable normal
+# Modify registry settings
+$registryChanges = @(
+  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v EnableSnapAssistFlyout /d 0 /f",
+  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v EnableSnapBar /d 0 /f",
+  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v MultiTaskingAltTabFilter /d 0 /f",
+  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\TaskbarDeveloperSettings /t REG_DWORD /v TaskbarEndTask /d 1 /f",
+  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v HideFileExt /d 0 /f",
+  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v Hidden /d 1 /f",
+  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v LaunchTo /d 1 /f",
+  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer /t REG_DWORD /v ShowRecent /d 0 /f",
+  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer /t REG_DWORD /v ShowFrequent /d 0 /f",
+  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer /t REG_DWORD /v ShowCloudFilesInQuickAccess /d 0 /f",
+  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v ShowTaskViewButton /d 0 /f",
+  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Search /t REG_DWORD /v SearchboxTaskbarMode /d 0 /f",
+  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize /t REG_DWORD /v EnableTransparency /d 0 /f"
+)
 
+foreach ($regChange in $registryChanges) {
+  try {
+    reg add $regChange
+    Write-Host "Registry key added: $regChange"
+  } catch {
+    Write-Host "Failed to add registry key: $regChange" -ForegroundColor Red
+  }
+}
+
+# Create setup directory and configuration file
 $setupPath = "$HOME\Downloads\Windows Setup"
-New-Item -ItemType Directory -Path $setupPath -Force
-Set-Location $setupPath
-
-$filePath = "Configuration.xml"
+$filePath = "$setupPath\Configuration.xml"
 $config = @"
 <Configuration ID="35d3badb-d62d-4bf5-8438-0b3ee0766659">
   <Add OfficeClientEdition="64" Channel="Current">
@@ -63,10 +77,17 @@ $config = @"
 </Configuration>
 "@
 
-if (-not (Test-Path -Path $filePath)) {
-  $config | Out-File -FilePath $filePath -Force
+try {
+  New-Item -ItemType Directory -Path $setupPath -Force | Out-Null
+  if (-not (Test-Path -Path $filePath)) {
+    $config | Out-File -FilePath $filePath -Force
+    Write-Host "Configuration file created at $filePath"
+  }
+} catch {
+  Write-Host "Failed to create configuration file or directory." -ForegroundColor Red
 }
 
+# Function to parse menu selection
 function Parse-MenuSelection {
   param (
     [string]$selection
@@ -80,8 +101,7 @@ function Parse-MenuSelection {
       $start = [int]$matches[1]
       $end = [int]$matches[2]
       $selected += $start..$end
-    }
-    elseif ($part -match "^\d+$") {
+    } elseif ($part -match "^\d+$") {
       $selected += [int]$part
     }
   }
@@ -89,6 +109,7 @@ function Parse-MenuSelection {
   return ($selected | Sort-Object -Unique)
 }
 
+# Function to display menu options
 function Show-Menu {
   Clear-Host
   Write-Host "=== Menu Options ==="
@@ -99,27 +120,33 @@ function Show-Menu {
   Write-Host "4. Install Microsoft Office 365"
   Write-Host "5. Install Telegram"
   Write-Host "6. Install Visual Studio Code"
+  Write-Host "7. Install Chocolatey"
+  Write-Host "8. Install Scoop"
   Write-Host "`nYou can select multiple options:"
   Write-Host "- Single numbers (e.g., 1,3,5)"
   Write-Host "- Ranges (e.g., 1-3)"
   Write-Host "- Combinations (e.g., 1-3,5)"
 }
 
+# Function to execute selected command
 function Execute-Command {
   param (
     [int]$option
   )
     
   switch ($option) {
-    1 { Start-Process -FilePath "cmd.exe" -ArgumentList '/c curl -#Lo CloudflareWarp.msi "https://1111-releases.cloudflareclient.com/win/latest" && msiexec /i CloudflareWarp.msi' }
-    2 { Start-Process -FilePath "cmd.exe" -ArgumentList '/c curl -#Lo FirefoxSetup.exe "https://download.mozilla.org/?product=firefox-latest&os=win64" && FirefoxSetup.exe' }
-    3 { Start-Process -FilePath "cmd.exe" -ArgumentList '/c curl -#Lo GoogleChrome.msi "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi" && msiexec /i GoogleChrome.msi' }
-    4 { Start-Process -FilePath "cmd.exe" -ArgumentList '/c curl -#LO "https://officecdn.microsoft.com/pr/wsus/setup.exe" && setup.exe /configure Configuration.xml' }
-    5 { Start-Process -FilePath "cmd.exe" -ArgumentList '/c curl -#Lo TelegramSetup.exe "https://telegram.org/dl/desktop/win64" && TelegramSetup.exe' }
-    6 { Start-Process -FilePath "cmd.exe" -ArgumentList '/c curl -#Lo VSCodeSetup.exe "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64" && VSCodeSetup.exe' }
+    1 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo CloudflareWarp.msi "https://1111-releases.cloudflareclient.com/win/latest"'; .\CloudflareWarp.msi }
+    2 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo FirefoxSetup.exe "https://download.mozilla.org/?product=firefox-latest&os=win64"'; .\FirefoxSetup.exe }
+    3 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo GoogleChrome.msi "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"'; .\GoogleChrome.msi }
+    4 { Start-Process -FilePath "curl.exe" -ArgumentList '-LO "https://officecdn.microsoft.com/pr/wsus/setup.exe"'; .\setup.exe /configure Configuration.xml }
+    5 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo TelegramSetup.exe "https://telegram.org/dl/desktop/win64"'; .\TelegramSetup.exe }
+    6 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo VSCodeSetup.exe "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64"'; .\VSCodeSetup.exe }
+    7 { Invoke-RestMethod -Uri https://community.chocolatey.org/install.ps1 | Invoke-Expression }
+    8 { Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression }
   }
 }
 
+# Main loop to show menu and process user input
 do {
   Show-Menu
   $choice = Read-Host "`nEnter your selection"
@@ -129,10 +156,10 @@ do {
   }
     
   $selectedOptions = Parse-MenuSelection $choice
-  $validOptions = $selectedOptions | Where-Object { $_ -ge 1 -and $_ -le 6 }
+  $validOptions = $selectedOptions | Where-Object { $_ -ge 1 -and $_ -le 8 }
   
   if ($validOptions.Count -eq 0) {
-    Write-Host "Invalid selection. Please try again."
+    Write-Host "Invalid selection. Please try again." -ForegroundColor Red
     continue
   }
     
@@ -142,4 +169,4 @@ do {
 
 } while ($true)
 
-Write-Host 'You can now manually delete the "Windows Setup" inside Downloads directory'
+Write-Host 'You can now manually delete the "Windows Setup" directory inside the Downloads folder if desired.'
