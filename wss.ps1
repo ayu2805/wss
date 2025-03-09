@@ -28,30 +28,20 @@ if (-not [string]::IsNullOrWhiteSpace($newComputerName)) {
 }
 
 # Modify registry settings
-$registryChanges = @(
-  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v EnableSnapAssistFlyout /d 0 /f",
-  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v EnableSnapBar /d 0 /f",
-  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v MultiTaskingAltTabFilter /d 0 /f",
-  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\TaskbarDeveloperSettings /t REG_DWORD /v TaskbarEndTask /d 1 /f",
-  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v HideFileExt /d 0 /f",
-  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v Hidden /d 1 /f",
-  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v LaunchTo /d 1 /f",
-  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer /t REG_DWORD /v ShowRecent /d 0 /f",
-  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer /t REG_DWORD /v ShowFrequent /d 0 /f",
-  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer /t REG_DWORD /v ShowCloudFilesInQuickAccess /d 0 /f",
-  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v ShowTaskViewButton /d 0 /f",
-  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Search /t REG_DWORD /v SearchboxTaskbarMode /d 0 /f",
-  "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize /t REG_DWORD /v EnableTransparency /d 0 /f"
-)
-
-foreach ($regChange in $registryChanges) {
-  try {
-    reg add $regChange
-    Write-Host "Registry key added: $regChange"
-  } catch {
-    Write-Host "Failed to add registry key: $regChange" -ForegroundColor Red
-  }
-}
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v EnableSnapAssistFlyout /d 0 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v EnableSnapBar /d 0 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v MultiTaskingAltTabFilter /d 0 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\TaskbarDeveloperSettings /t REG_DWORD /v TaskbarEndTask /d 1 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v HideFileExt /d 0 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v Hidden /d 1 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v LaunchTo /d 1 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer /t REG_DWORD /v ShowRecent /d 0 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer /t REG_DWORD /v ShowFrequent /d 0 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer /t REG_DWORD /v ShowCloudFilesInQuickAccess /d 0 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v ShowTaskViewButton /d 0 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Search /t REG_DWORD /v SearchboxTaskbarMode /d 0 /f
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize /t REG_DWORD /v EnableTransparency /d 0 /f
+sudo config --enable normal
 
 # Create setup directory and configuration file
 $setupPath = "$HOME\Downloads\Windows Setup"
