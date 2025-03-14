@@ -73,6 +73,7 @@ $config = @"
 
 try {
   New-Item -ItemType Directory -Path $setupPath -Force | Out-Null
+  Set-Location $setupPath
   if (-not (Test-Path -Path $filePath)) {
     $config | Out-File -FilePath $filePath -Force
     Write-Host "Configuration file created at $filePath"
@@ -163,4 +164,4 @@ do {
 
 } while ($true)
 
-Write-Host 'You can now manually delete the "Windows Setup" directory inside the Downloads folder if desired.'
+Remove-Item -Recurse $setupPath
