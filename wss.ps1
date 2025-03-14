@@ -137,7 +137,7 @@ function Execute-Command {
     3 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo GoogleChrome.msi "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"'; Start-Process -FilePath "GoogleChrome.msi" -ArgumentList "/qn" }
     4 { Start-Process -FilePath "curl.exe" -ArgumentList '-LO "https://officecdn.microsoft.com/pr/wsus/setup.exe"'; Start-Process -FilePath "setup.exe" -ArgumentList "/configure Configuration.xml" }
     5 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo TelegramSetup.exe "https://telegram.org/dl/desktop/win64"'; Start-Process -FilePath "TelegramSetup.exe" -ArgumentList "/s" }
-    6 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo VSCodeSetup.exe "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64"'; Start-Process -FilePath "VSCodeSetup.exe" -ArgumentList "/s" }
+    6 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo VSCodeSetup.exe "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64"'; Start-Process -FilePath "VSCodeSetup.exe" -ArgumentList "/verysilent /mergetasks=!runcode" }
     7 { Invoke-RestMethod -Uri https://community.chocolatey.org/install.ps1 | Invoke-Expression }
     8 { Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression }
   }
