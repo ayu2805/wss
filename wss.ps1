@@ -129,12 +129,12 @@ function Execute-Command {
   )
     
   switch ($option) {
-    1 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo CloudflareWarp.msi "https://1111-releases.cloudflareclient.com/win/latest"'; .\CloudflareWarp.msi }
-    2 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo FirefoxSetup.exe "https://download.mozilla.org/?product=firefox-latest&os=win64"'; .\FirefoxSetup.exe }
-    3 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo GoogleChrome.msi "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"'; .\GoogleChrome.msi }
-    4 { Start-Process -FilePath "curl.exe" -ArgumentList '-LO "https://officecdn.microsoft.com/pr/wsus/setup.exe"'; .\setup.exe /configure Configuration.xml }
-    5 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo TelegramSetup.exe "https://telegram.org/dl/desktop/win64"'; .\TelegramSetup.exe }
-    6 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo VSCodeSetup.exe "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64"'; .\VSCodeSetup.exe }
+    1 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo CloudflareWarp.msi "https://1111-releases.cloudflareclient.com/win/latest"' -Wait; .\CloudflareWarp.msi }
+    2 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo FirefoxSetup.exe "https://download.mozilla.org/?product=firefox-latest&os=win64"' -Wait; .\FirefoxSetup.exe }
+    3 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo GoogleChrome.msi "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"' -Wait; .\GoogleChrome.msi }
+    4 { Start-Process -FilePath "curl.exe" -ArgumentList '-LO "https://officecdn.microsoft.com/pr/wsus/setup.exe"' -Wait; .\setup.exe /configure Configuration.xml }
+    5 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo TelegramSetup.exe "https://telegram.org/dl/desktop/win64"' -Wait; .\TelegramSetup.exe }
+    6 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo VSCodeSetup.exe "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64"' -Wait; .\VSCodeSetup.exe }
     7 { Invoke-RestMethod -Uri https://community.chocolatey.org/install.ps1 | Invoke-Expression }
     8 { Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression }
   }
