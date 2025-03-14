@@ -28,6 +28,7 @@ if (-not [string]::IsNullOrWhiteSpace($newComputerName)) {
 }
 
 # Modify registry settings
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v Start_Layout /d 1 /f
 reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v UseCompactMode /d 1 /f
 reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v EnableSnapAssistFlyout /d 0 /f
 reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v EnableSnapBar /d 0 /f
@@ -46,6 +47,7 @@ reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Perso
 reg add HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System /t REG_DWORD /v PromptOnSecureDesktop /d 0 /f
 sudo config --enable normal
 Start-Process -FilePath "C:\Windows\Resources\Themes\dark.theme" -Wait; taskkill /f /im SystemSettings.exe
+Stop-Process -Name explorer
 
 # Create setup directory and configuration file
 $setupPath = "$HOME\Downloads\Windows Setup"
