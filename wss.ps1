@@ -164,4 +164,5 @@ do {
 
 } while ($true)
 
+Set-Location $env:USERPROFILE
 Remove-Item -Recurse $setupPath
