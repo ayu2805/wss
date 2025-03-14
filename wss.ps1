@@ -43,6 +43,7 @@ reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Search /t RE
 reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize /t REG_DWORD /v EnableTransparency /d 0 /f
 reg add HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System /t REG_DWORD /v PromptOnSecureDesktop /d 0 /f
 sudo config --enable normal
+Start-Process -FilePath "C:\Windows\Resources\Themes\dark.theme"
 
 # Create setup directory and configuration file
 $setupPath = "$HOME\Downloads\Windows Setup"
