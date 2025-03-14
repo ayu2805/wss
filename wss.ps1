@@ -164,5 +164,4 @@ do {
 
 } while ($true)
 
-Set-Location $env:USERPROFILE
-Remove-Item -Recurse $setupPath
+Write-Host 'You can now manually delete the "Windows Setup" directory inside the Downloads folder if desired.'
