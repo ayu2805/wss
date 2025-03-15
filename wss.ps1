@@ -126,11 +126,11 @@ function Execute-Command {
   )
     
   switch ($option) {
-    1 { Start-Process -FilePath "curl.exe" -ArgumentList "-Lo $Env:TEMP\wss\CloudflareWarp.msi", "https://1111-releases.cloudflareclient.com/win/latest"; Start-Process -FilePath "$Env:TEMP\wss\CloudflareWarp.msi" -ArgumentList "/qn" }
+    1 { Start-Process -FilePath "curl.exe" -ArgumentList "-Lo $Env:TEMP\wss\CloudflareWarp.msi", "https://1111-releases.cloudflareclient.com/win/latest"; Start-Process -FilePath "$Env:TEMP\wss\CloudflareWarp.msi" -ArgumentList "/quiet" }
     2 { Start-Process -FilePath "curl.exe" -ArgumentList "-Lo $Env:TEMP\wss\FirefoxSetup.exe", "https://download.mozilla.org/?product=firefox-latest&os=win64"; Start-Process -FilePath "$Env:TEMP\wss\FirefoxSetup.exe" -ArgumentList "/s" }
-    3 { Start-Process -FilePath "curl.exe" -ArgumentList "-Lo $Env:TEMP\wss\GoogleChrome.msi", "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"; Start-Process -FilePath "$Env:TEMP\wss\GoogleChrome.msi" -ArgumentList "/qn" }
+    3 { Start-Process -FilePath "curl.exe" -ArgumentList "-Lo $Env:TEMP\wss\GoogleChrome.msi", "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"; Start-Process -FilePath "$Env:TEMP\wss\GoogleChrome.msi" -ArgumentList "/quiet" }
     4 { Start-Process -FilePath "curl.exe" -ArgumentList "-Lo $Env:TEMP\wss\setup.exe", "https://officecdn.microsoft.com/pr/wsus/setup.exe"; Create-ConfigFile; Start-Process -FilePath "$Env:TEMP\wss\setup.exe" -ArgumentList "/configure Configuration.xml" }
-    5 { Start-Process -FilePath "curl.exe" -ArgumentList "-Lo $Env:TEMP\wss\TelegramSetup.exe", "https://telegram.org/dl/desktop/win64"; Start-Process -FilePath "$Env:TEMP\wss\TelegramSetup.exe" -ArgumentList "/s" }
+    5 { Start-Process -FilePath "curl.exe" -ArgumentList "-Lo $Env:TEMP\wss\TelegramSetup.exe", "https://telegram.org/dl/desktop/win64"; Start-Process -FilePath "$Env:TEMP\wss\TelegramSetup.exe" -ArgumentList "/verysilent" }
     6 { Start-Process -FilePath "curl.exe" -ArgumentList "-Lo $Env:TEMP\wss\VSCodeSetup.exe", "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64"; Start-Process -FilePath "$Env:TEMP\wss\VSCodeSetup.exe" -ArgumentList "/verysilent /mergetasks=!runcode" }
     7 { Invoke-RestMethod -Uri https://community.chocolatey.org/install.ps1 | Invoke-Expression }
     8 { Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression }
