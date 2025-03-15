@@ -5,8 +5,6 @@ $isAdmin = $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::A
 if (-not $isAdmin) {
   Write-Host "Script is not running with administrative privileges." -ForegroundColor Red
   Write-Host "Please run PowerShell as Administrator." -ForegroundColor Yellow
-  Write-Host "Press any key to close this window..."
-  $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
   exit
 }
 
@@ -49,10 +47,10 @@ sudo config --enable normal
 Start-Process -FilePath "C:\Windows\Resources\Themes\dark.theme" -Wait; taskkill /f /im SystemSettings.exe
 Stop-Process -Name explorer
 
-# Create setup directory and configuration file
-$setupPath = "$HOME\Downloads\Windows Setup"
-$filePath = "$setupPath\Configuration.xml"
-$config = @"
+# Function to create configuration file
+function Create-ConfigFile {
+  $filePath = "$Env:TEMP\Configuration.xml"
+  $config = @"
 <Configuration ID="35d3badb-d62d-4bf5-8438-0b3ee0766659">
   <Add OfficeClientEdition="64" Channel="Current">
     <Product ID="O365ProPlusRetail">
@@ -72,16 +70,10 @@ $config = @"
   <RemoveMSI />
 </Configuration>
 "@
-
-try {
-  New-Item -ItemType Directory -Path $setupPath -Force | Out-Null
-  Set-Location $setupPath
+  
   if (-not (Test-Path -Path $filePath)) {
     $config | Out-File -FilePath $filePath -Force
-    Write-Host "Configuration file created at $filePath"
   }
-} catch {
-  Write-Host "Failed to create configuration file or directory." -ForegroundColor Red
 }
 
 # Function to parse menu selection
@@ -132,12 +124,12 @@ function Execute-Command {
   )
     
   switch ($option) {
-    1 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo CloudflareWarp.msi "https://1111-releases.cloudflareclient.com/win/latest"'; Start-Process -FilePath "CloudflareWarp.msi" -ArgumentList "/qn" }
-    2 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo FirefoxSetup.exe "https://download.mozilla.org/?product=firefox-latest&os=win64"'; Start-Process -FilePath "FirefoxSetup.exe" -ArgumentList "/s" }
-    3 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo GoogleChrome.msi "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"'; Start-Process -FilePath "GoogleChrome.msi" -ArgumentList "/qn" }
-    4 { Start-Process -FilePath "curl.exe" -ArgumentList '-LO "https://officecdn.microsoft.com/pr/wsus/setup.exe"'; Start-Process -FilePath "setup.exe" -ArgumentList "/configure Configuration.xml" }
-    5 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo TelegramSetup.exe "https://telegram.org/dl/desktop/win64"'; Start-Process -FilePath "TelegramSetup.exe" -ArgumentList "/s" }
-    6 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo VSCodeSetup.exe "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64"'; Start-Process -FilePath "VSCodeSetup.exe" -ArgumentList "/verysilent /mergetasks=!runcode" }
+    1 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo $Env:TEMP\CloudflareWarp.msi "https://1111-releases.cloudflareclient.com/win/latest"'; Start-Process -FilePath "$Env:TEMP\CloudflareWarp.msi" -ArgumentList "/qn" }
+    2 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo $Env:TEMP\FirefoxSetup.exe "https://download.mozilla.org/?product=firefox-latest&os=win64"'; Start-Process -FilePath "$Env:TEMP\FirefoxSetup.exe" -ArgumentList "/s" }
+    3 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo $Env:TEMP\GoogleChrome.msi "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"'; Start-Process -FilePath "$Env:TEMP\GoogleChrome.msi" -ArgumentList "/qn" }
+    4 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo $Env:TEMP\setup.exe "https://officecdn.microsoft.com/pr/wsus/setup.exe"'; Create-ConfigFile; Start-Process -FilePath "$Env:TEMP\setup.exe" -ArgumentList "/configure Configuration.xml" }
+    5 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo $Env:TEMP\TelegramSetup.exe "https://telegram.org/dl/desktop/win64"'; Start-Process -FilePath "$Env:TEMP\TelegramSetup.exe" -ArgumentList "/s" }
+    6 { Start-Process -FilePath "curl.exe" -ArgumentList '-Lo $Env:TEMP\VSCodeSetup.exe "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64"'; Start-Process -FilePath "$Env:TEMP\VSCodeSetup.exe" -ArgumentList "/verysilent /mergetasks=!runcode" }
     7 { Invoke-RestMethod -Uri https://community.chocolatey.org/install.ps1 | Invoke-Expression }
     8 { Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression }
   }
