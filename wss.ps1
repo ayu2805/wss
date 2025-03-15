@@ -157,5 +157,3 @@ do {
   }
 
 } while ($true)
-
-Write-Host 'You can now manually delete the "Windows Setup" directory inside the Downloads folder if desired.'
