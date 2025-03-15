@@ -5,7 +5,7 @@ $isAdmin = $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::A
 if (-not $isAdmin) {
   Write-Host "Script is not running with administrative privileges." -ForegroundColor Red
   Write-Host "Please run PowerShell as Administrator." -ForegroundColor Yellow
-  exit
+  return
 }
 
 # Prompt for new computer name
