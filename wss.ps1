@@ -26,6 +26,7 @@ if (-not [string]::IsNullOrWhiteSpace($newComputerName)) {
 }
 
 # Modify registry settings
+reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v  SnapAssist /d 1 /f
 reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v Start_Layout /d 1 /f
 reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v UseCompactMode /d 1 /f
 reg add HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /t REG_DWORD /v EnableSnapAssistFlyout /d 0 /f
