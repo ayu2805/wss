@@ -3,7 +3,7 @@ Windows Setup Script
 
 > **Warning**: Always be careful when running scripts from the Internet.
 
-**Note:** This script is only meant for latest Windows 10 and 11
+**Note:** This script is only meant for latest Windows 11
 
 #### To run this script run this in Powershell as Administrator:
 ```
