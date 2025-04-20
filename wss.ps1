@@ -32,7 +32,7 @@ function Update-RegistrySettings {
   )
   foreach ($setting in $settings) {
     try {
-      Set-ItemProperty @setting -Force -ErrorAction Stop
+      Set-ItemProperty -Path $setting.Path -Name $setting.Name -Value $setting.Value -Type $setting.Type -Force -ErrorAction Stop
       Write-Host "Updated registry setting $($setting.Name) successfully." -ForegroundColor Green
     }
     catch {
