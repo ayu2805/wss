@@ -202,7 +202,7 @@ $menuOptions = @(
   @{ Label = "Telegram"; Url = "https://telegram.org/dl/desktop/win64"; FileName = "TelegramSetup.exe"; Arguments = "/verysilent" },
   @{ Label = "Visual Studio Code"; Url = "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64"; FileName = "VSCodeSetup.exe"; Arguments = "/verysilent /mergetasks=!runcode" },
   @{ Label = "Chocolatey"; Script = { Invoke-RestMethod -Uri https://community.chocolatey.org/install.ps1 | Invoke-Expression } },
-  @{ Label = "Scoop"; Script = { Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression } }
+  @{ Label = "Scoop"; Script = { Invoke-Expression "& {$(Invoke-RestMethod -Uri 'https://get.scoop.sh')} -RunAsAdmin" } }
 )
 
 # Main loop to show menu and process user input
