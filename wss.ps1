@@ -191,6 +191,7 @@ if ($confirmRegistry -match '^(yes|y)$') {
   )
   Update-RegistrySettings -settings $registrySettings
   Set-Theme
+  sudo config --enable normal
 }
 
 # Create temporary directory
