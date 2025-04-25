@@ -138,6 +138,7 @@ function Invoke-Command {
     }
   }
   elseif ($menuOption.Script) {
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
     Write-Host "Installing $($menuOption.Label)..." -ForegroundColor Yellow
     try {
       & $menuOption.Script
