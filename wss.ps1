@@ -105,7 +105,6 @@ function Convert-MenuSelection {
 
 # Function to display menu options
 function Show-Menu {
-  Clear-Host
   Write-Host "=== Menu Options ==="
   Write-Host "0. Quit"
   for ($i = 0; $i -lt $menuOptions.Count; $i++) {
