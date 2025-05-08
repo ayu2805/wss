@@ -1,6 +1,30 @@
 $ProgressPreference = 'SilentlyContinue'
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
+# Function to add Clear-PSHistory to the profile
+function Add-ClearPSHistoryFunction {
+  $functionCode = @"
+function Clear-PSHistory {
+  $historyPath = (Get-PSReadLineOption).HistorySavePath
+  if (Test-Path $historyPath) {
+    Remove-Item $historyPath -Force
+    Write-Host "PowerShell history cleared."
+  }
+  else {
+    Write-Host "No history file found at $historyPath."
+  }
+}
+"@
+
+  if (-not (Get-Content $PROFILE | Select-String -Pattern 'function Clear-PSHistory')) {
+    Add-Content -Path $PROFILE -Value $functionCode
+    Write-Host "Clear-PSHistory function added to profile."
+  }
+  else {
+    Write-Host "Clear-PSHistory function already exists in profile."
+  }
+}
+
 # Function to check if running with administrative privileges
 function Test-Admin {
   $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -193,6 +217,7 @@ if ($confirmRegistry -match '^(yes|y)$') {
   )
   Update-RegistrySettings -settings $registrySettings
   Set-Theme
+  Add-ClearPSHistoryFunction
   sudo config --enable normal
 }
 
