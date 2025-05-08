@@ -1,4 +1,5 @@
 $ProgressPreference = 'SilentlyContinue'
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 # Function to check if running with administrative privileges
 function Test-Admin {
