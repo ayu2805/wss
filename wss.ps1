@@ -17,8 +17,7 @@ function Clear-PSHistory {
 "@
 
   if (-not (Test-Path $PROFILE)) {
-    New-Item -Path $PROFILE -ItemType File -Force
-    Write-Host "Profile created at $PROFILE."
+    New-Item -Path $PROFILE -ItemType File -Force | Out-Null
   }
   
   if (-not (Get-Content $PROFILE | Select-String -Pattern 'function Clear-PSHistory')) {
