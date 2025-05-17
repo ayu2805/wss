@@ -83,12 +83,13 @@ function Remove-RegistryKeys {
       if (Test-Path $key) {
         Remove-Item -Path $key -Recurse -Force -ErrorAction Stop
         Write-Host "Removed registry key $key successfully." -ForegroundColor Green
-      } else {
+      }
+      else {
         Write-Host "Registry key $key does not exist." -ForegroundColor Yellow
       }
     }
     catch {
-      Write-Error "Failed to remove registry key $key: $_"
+      Write-Error "Failed to remove registry key ${key}: $_"
     }
   }
 }
@@ -113,7 +114,8 @@ function Set-Wallpaper {
     $SPIF_SENDCHANGE = 0x02
     [Wallpaper]::SystemParametersInfo($SPI_SETDESKWALLPAPER, 0, $ImagePath, $SPIF_UPDATEINIFILE -bor $SPIF_SENDCHANGE) | Out-Null
     Write-Host "Wallpaper changed to $ImagePath" -ForegroundColor Green
-  } else {
+  }
+  else {
     Write-Host "File not found: $ImagePath" -ForegroundColor Red
   }
 }
