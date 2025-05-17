@@ -276,6 +276,7 @@ if ($confirmRegistry -match '^(yes|y)$') {
   Set-Wallpaper -ImagePath "C:\Windows\Web\Wallpaper\Windows\img19.jpg"
   Add-ClearPSHistoryFunction
   sudo config --enable normal
+  Write-Host "Please reboot your system to complete the changes." -ForegroundColor Yellow
 }
 
 # Create temporary directory
