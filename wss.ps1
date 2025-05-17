@@ -93,18 +93,43 @@ function Remove-RegistryKeys {
   }
 }
 
-# Function to apply theme and restart explorer
-function Set-Theme {
-  try {
-    Start-Process -FilePath "C:\Windows\Resources\Themes\dark.theme" -Wait -ErrorAction Stop
-    Stop-Process -Name SystemSettings -ErrorAction SilentlyContinue
-    Stop-Process -Name explorer -Force -ErrorAction Stop
-    Write-Host "Theme applied and explorer restarted." -ForegroundColor Green
-  }
-  catch {
-    Write-Error "Failed to apply theme: $_"
+function Set-Wallpaper {
+  param (
+    [string]$ImagePath
+  )
+
+  if (Test-Path $ImagePath) {
+    # Use the SystemParametersInfo function to change the wallpaper
+    $null = Add-Type -TypeDefinition @"
+    using System;
+    using System.Runtime.InteropServices;
+    public class Wallpaper {
+      [DllImport("user32.dll", CharSet = CharSet.Auto)]
+      public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+    }
+"@
+    $SPI_SETDESKWALLPAPER = 20
+    $SPIF_UPDATEINIFILE = 0x01
+    $SPIF_SENDCHANGE = 0x02
+    [Wallpaper]::SystemParametersInfo($SPI_SETDESKWALLPAPER, 0, $ImagePath, $SPIF_UPDATEINIFILE -bor $SPIF_SENDCHANGE) | Out-Null
+    Write-Host "Wallpaper changed to $ImagePath" -ForegroundColor Green
+  } else {
+    Write-Host "File not found: $ImagePath" -ForegroundColor Red
   }
 }
+
+# Function to apply theme and restart explorer
+# function Set-Theme {
+#   try {
+#     Start-Process -FilePath "C:\Windows\Resources\Themes\dark.theme" -Wait -ErrorAction Stop
+#     Stop-Process -Name SystemSettings -ErrorAction SilentlyContinue
+#     Stop-Process -Name explorer -Force -ErrorAction Stop
+#     Write-Host "Theme applied and explorer restarted." -ForegroundColor Green
+#   }
+#   catch {
+#     Write-Error "Failed to apply theme: $_"
+#   }
+# }
 
 # Function to create configuration file
 function New-ConfigFile {
@@ -245,7 +270,8 @@ if ($confirmRegistry -match '^(yes|y)$') {
   )
   Update-RegistrySettings -settings $registrySettings
   Remove-RegistryKeys -keys $keysToRemove
-  Set-Theme
+  # Set-Theme
+  Set-Wallpaper -ImagePath "C:\Windows\Web\Wallpaper\Windows\img19.jpg"
   Add-ClearPSHistoryFunction
   sudo config --enable normal
 }
