@@ -73,6 +73,26 @@ function Update-RegistrySettings {
   }
 }
 
+# Function to remove registry keys
+function Remove-RegistryKeys {
+  param (
+    [array]$keys
+  )
+  foreach ($key in $keys) {
+    try {
+      if (Test-Path $key) {
+        Remove-Item -Path $key -Recurse -Force -ErrorAction Stop
+        Write-Host "Removed registry key $key successfully." -ForegroundColor Green
+      } else {
+        Write-Host "Registry key $key does not exist." -ForegroundColor Yellow
+      }
+    }
+    catch {
+      Write-Error "Failed to remove registry key $key: $_"
+    }
+  }
+}
+
 # Function to apply theme and restart explorer
 function Set-Theme {
   try {
@@ -219,7 +239,12 @@ if ($confirmRegistry -match '^(yes|y)$') {
     @{ Path = 'HKLM:\SYSTEM\CurrentControlSet\Control\Power'; Name = 'HibernateEnabledDefault'; Value = 0; Type = 'DWord' },
     @{ Path = 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management'; Name = 'ClearPageFileAtShutdown'; Value = 1; Type = 'DWord' }
   )
+  $keysToRemove = @(
+    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{f874310e-b6b7-47dc-bc84-b9e6b38f5903}",
+    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{e88865ea-0e1c-4e20-9aa6-edcd0212c87c}"
+  )
   Update-RegistrySettings -settings $registrySettings
+  Remove-RegistryKeys -keys $keysToRemove
   Set-Theme
   Add-ClearPSHistoryFunction
   sudo config --enable normal
