@@ -89,7 +89,7 @@ function Remove-RegistryKeys {
       }
     }
     catch {
-      Write-Error "Failed to remove registry key ${key}: $_"
+      Write-Error "Failed to remove registry key $($key): $_"
     }
   }
 }
