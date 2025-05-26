@@ -3,7 +3,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 # Function to add Clear-PSHistory to the profile
 function Add-ClearPSHistoryFunction {
-  $functionCode = @"
+  $functionCode = @'
 function Clear-PSHistory {
   $historyPath = (Get-PSReadLineOption).HistorySavePath
   if (Test-Path $historyPath) {
@@ -14,7 +14,7 @@ function Clear-PSHistory {
     Write-Host "No history file found at $historyPath."
   }
 }
-"@
+'@
 
   if (-not (Test-Path $PROFILE)) {
     New-Item -Path $PROFILE -ItemType File -Force | Out-Null
