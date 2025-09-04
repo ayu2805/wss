@@ -1,0 +1,18 @@
+function Start-VSCompile {
+    param (
+        [Parameter(Mandatory = $true, Position = 0, ValueFromRemainingArguments = $true)]
+        [string[]]$Files
+    )
+
+    foreach ($file in $Files) {
+        if (-Not (Test-Path $file)) {
+            Write-Error "Source file '$file' not found."
+            exit 1
+        }
+    }
+
+    $vsDevShellPath = "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\Launch-VsDevShell.ps1"
+    & $vsDevShellPath
+    & cl.exe /EHsc /nologo $Files
+    Remove-Item -Path *.obj
+}
