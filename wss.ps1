@@ -244,7 +244,12 @@ else {
 $confirmRegistry = Read-Host "Do you want some basic customisation? (y/N)"
 if ($confirmRegistry -match '^(yes|y)$') {
   $registrySettings = @(
+    @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\CPSS\Store\InkingAndTypingPersonalization'; Name = 'Value'; Value = 0; Type = 'DWord' },
     @{ Path = 'HKCU:\Control Panel\International\User Profile'; Name = 'HttpAcceptLanguageOptOut'; Value = 1; Type = 'DWord' },
+    @{ Path = 'HKCU:\Software\Microsoft\Personalization\Settings'; Name = 'AcceptedPrivacyPolicy'; Value = 0; Type = 'DWord' },
+    @{ Path = 'HKCU:\Software\Microsoft\InputPersonalization'; Name = 'RestrictImplicitInkCollection'; Value = 1; Type = 'DWord' },
+    @{ Path = 'HKCU:\Software\Microsoft\InputPersonalization'; Name = 'RestrictImplicitTextCollection'; Value = 1; Type = 'DWord' },
+    @{ Path = 'HKCU:\Software\Microsoft\InputPersonalization\TrainedDataStore'; Name = 'HarvestContacts'; Value = 0; Type = 'DWord' },
     @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'EnableSnapAssistFlyout'; Value = 0; Type = 'DWord' },
     @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'EnableTaskGroups'; Value = 0; Type = 'DWord' },
     @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'EnableSnapBar'; Value = 0; Type = 'DWord' },
