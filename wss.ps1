@@ -244,6 +244,7 @@ else {
 $confirmRegistry = Read-Host "Do you want some basic customisation? (y/N)"
 if ($confirmRegistry -match '^(yes|y)$') {
   $registrySettings = @(
+    @{ Path = 'HKCU:\Control Panel\International\User Profile'; Name = 'HttpAcceptLanguageOptOut'; Value = 1; Type = 'DWord' },
     @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'EnableSnapAssistFlyout'; Value = 0; Type = 'DWord' },
     @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'EnableTaskGroups'; Value = 0; Type = 'DWord' },
     @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'EnableSnapBar'; Value = 0; Type = 'DWord' },
