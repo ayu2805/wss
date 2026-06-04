@@ -136,7 +136,7 @@ function Set-Wallpaper {
 # Function to create configuration file
 function New-ConfigFile {
   $config = @"
-<Configuration ID="35d3badb-d62d-4bf5-8438-0b3ee0766659">
+<Configuration ID="df6685bb-da04-4a3f-9787-7d51250cd5d8">
   <Add OfficeClientEdition="64" Channel="Current">
     <Product ID="O365ProPlusRetail">
       <Language ID="MatchOS" />
@@ -146,13 +146,14 @@ function New-ConfigFile {
       <ExcludeApp ID="OneDrive" />
       <ExcludeApp ID="OneNote" />
       <ExcludeApp ID="Outlook" />
+      <ExcludeApp ID="OutlookForWindows" />
       <ExcludeApp ID="Publisher" />
       <ExcludeApp ID="Teams" />
-      <ExcludeApp ID="Bing" />
     </Product>
   </Add>
   <Updates Enabled="TRUE" />
   <RemoveMSI />
+  <Display Level="Full" AcceptEULA="TRUE" />
 </Configuration>
 "@
   Set-Content -Path "$Env:TEMP\Configuration.xml" -Value $config
