@@ -28,7 +28,7 @@ Get-WindowsCapability -Online | Where-Object {$_.State -eq 'Installed'} | ForEac
 }
 ```
 
-#### Check All Removable Windows Features
+#### Remove All Removable Windows Features
 To check and disable all removable Windows features, use the following command:
 ```powershell
 Get-WindowsOptionalFeature -Online | Where-Object {$_.State -eq 'Enabled'} | ForEach-Object { 
