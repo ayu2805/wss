@@ -20,7 +20,7 @@ Get-AppxPackage -AllUsers | Remove-AppxPackage -ErrorAction SilentlyContinue
 To clear the Windows Update history, run the following PowerShell commands:
 ```powershell
 Stop-Service -Name UsoSvc, wuauserv -Force
-Remove-Item -Path "$env:SystemRoot\SoftwareDistribution\DataStore\Logs\edb.log", "$env:ProgramData\USOPrivate\UpdateStore\*" -Recurse -Force
+cmd /c " del /f /q %SystemRoot%\SoftwareDistribution\DataStore\Logs\edb.log %ProgramData%\USOPrivate\UpdateStore\*"
 Start-Service -Name UsoSvc, wuauserv
 ```
 
