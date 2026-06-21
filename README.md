@@ -16,8 +16,20 @@ To remove all removable packages, run the following PowerShell command:
 Get-AppxPackage -AllUsers | Remove-AppxPackage -ErrorAction SilentlyContinue
 ```
 
+#### Clear Windows Update History
+To clear the Windows Update history, run the following PowerShell commands:
+```powershell
+Stop-Service -Name UsoSvc -Force
+Stop-Service -Name wuauserv -Force
+Remove-Item -Path "$env:SystemRoot\SoftwareDistribution\DataStore\Logs\edb.log" -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "C:\ProgramData\USOPrivate\UpdateStore\*" -Recurse -Force -ErrorAction SilentlyContinue
+Start-Service -Name UsoSvc
+Start-Service -Name wuauserv
+.\UsoClient.exe RefreshSettings
+```
+
 #### Remove All Removable Optional Features
-To remove all removable optional features, execute the command below:
+To remove all removable optional features, run the following PowerShell command:
 ```powershell
 Get-WindowsCapability -Online | Where-Object {$_.State -eq 'Installed'} | ForEach-Object { 
     try { 
@@ -29,7 +41,7 @@ Get-WindowsCapability -Online | Where-Object {$_.State -eq 'Installed'} | ForEac
 ```
 
 #### Remove All Removable Windows Features
-To check and disable all removable Windows features, use the following command:
+To check and disable all removable Windows features, run the following PowerShell command:
 ```powershell
 Get-WindowsOptionalFeature -Online | Where-Object {$_.State -eq 'Enabled'} | ForEach-Object { 
     try {
