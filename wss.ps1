@@ -303,6 +303,10 @@ if ($confirmRegistry -match '^(yes|y)$') {
   New-PSDrive -PSProvider Registry -Name HKU -Root HKEY_USERS
   Update-RegistrySettings -settings $registrySettings
   Remove-RegistryKeys -keys $keysToRemove
+
+  Stop-Service -Name DiagTrack -Force
+  Set-Service -Name DiagTrack -StartupType Manual
+  
   # Set-Theme
   Set-Wallpaper -ImagePath "C:\Windows\Web\Wallpaper\Windows\img19.jpg"
   Add-ClearPSHistoryFunction
