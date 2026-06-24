@@ -288,7 +288,7 @@ if ($confirmRegistry -match '^(yes|y)$') {
     @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System'; Name = 'PublishUserActivities'; Value = 0; Type = 'DWord' },
     @{ Path = 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management'; Name = 'ClearPageFileAtShutdown'; Value = 1; Type = 'DWord' },
     @{ Path = 'HKU:\.DEFAULT\Control Panel\Keyboard'; Name = 'InitialKeyboardIndicators'; Value = 2; Type = 'String' },
-    @{ Path = 'HKU:\Software\Microsoft\Windows\CurrentVersion\CDP'; Name = 'EnablePromotionalAppsForShare'; Value = 2; Type = 'String' }
+    @{ Path = 'HKU:\Software\Microsoft\Windows\CurrentVersion\CDP'; Name = 'EnablePromotionalAppsForShare'; Value = 0; Type = 'DWord' }
   )
 
   # Optional Hibernate setting
