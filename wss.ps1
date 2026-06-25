@@ -136,10 +136,10 @@ function Set-Wallpaper {
 # Function to create configuration file
 function New-ConfigFile {
   $config = @"
-<Configuration ID="df6685bb-da04-4a3f-9787-7d51250cd5d8">
+<Configuration ID="03cdf0e8-2737-4d2f-b1b8-d50a6103046d">
   <Add OfficeClientEdition="64" Channel="Current">
     <Product ID="O365ProPlusRetail">
-      <Language ID="MatchOS" />
+      <Language ID="en-gb" />
       <ExcludeApp ID="Access" />
       <ExcludeApp ID="Groove" />
       <ExcludeApp ID="Lync" />
@@ -151,6 +151,10 @@ function New-ConfigFile {
       <ExcludeApp ID="Teams" />
     </Product>
   </Add>
+  <Property Name="SharedComputerLicensing" Value="0" />
+  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
+  <Property Name="DeviceBasedLicensing" Value="0" />
+  <Property Name="SCLCacheOverride" Value="0" />
   <Updates Enabled="TRUE" />
   <RemoveMSI />
   <Display Level="Full" AcceptEULA="TRUE" />
