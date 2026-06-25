@@ -322,7 +322,7 @@ New-Item -ItemType Directory -Path "$env:TEMP\wss" -Force | Out-Null
 # Define menu options
 $menuOptions = @(
   @{ Label = "Cloudflare Warp"; Url = "https://1111-releases.cloudflareclient.com/win/latest"; FileName = "CloudflareWarp.msi"; Arguments = "/quiet" },
-  @{ Label = "Firefox"; Url = "https://download.mozilla.org/?product=firefox-latest&os=win64"; FileName = "FirefoxSetup.exe"; Arguments = "/s" },
+  @{ Label = "Firefox"; Url = "https://download.mozilla.org/?product=firefox-latest&os=win64&lang=en-GB"; FileName = "FirefoxSetup.exe"; Arguments = "/s" },
   @{ Label = "Google Chrome"; Url = "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"; FileName = "GoogleChrome.msi"; Arguments = "/quiet" },
   @{ Label = "Microsoft Office 365"; Url = "https://officecdn.microsoft.com/pr/wsus/setup.exe"; FileName = "setup.exe"; Arguments = "/configure $Env:TEMP\Configuration.xml" },
   @{ Label = "Telegram"; Url = "https://telegram.org/dl/desktop/win64"; FileName = "TelegramSetup.exe"; Arguments = "/verysilent" },
