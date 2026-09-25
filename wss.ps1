@@ -94,6 +94,34 @@ function Remove-RegistryKeys {
   }
 }
 
+function Set-IntegratedServicesPolicyPermissions {
+    $filePath = "C:\Windows\System32\IntegratedServicesRegionPolicySet.json"
+
+    $usersAccount = [System.Security.Principal.NTAccount]"BUILTIN\Users"
+    $administratorsAccount = [System.Security.Principal.NTAccount]"BUILTIN\Administrators"
+
+    $fileAcl = Get-Acl -Path $filePath
+
+    $fileAcl.SetOwner($usersAccount)
+
+    $usersPermission = [System.Security.AccessControl.FileSystemAccessRule]::new(
+        $usersAccount,
+        "FullControl",
+        "Allow"
+    )
+
+    $administratorsPermission = [System.Security.AccessControl.FileSystemAccessRule]::new(
+        $administratorsAccount,
+        "FullControl",
+        "Allow"
+    )
+
+    $fileAcl.SetAccessRule($usersPermission)
+    $fileAcl.SetAccessRule($administratorsPermission)
+
+    Set-Acl -Path $filePath -AclObject $fileAcl
+}
+
 function Set-Wallpaper {
   param (
     [string]$ImagePath
@@ -319,6 +347,7 @@ if ($confirmRegistry -match '^(yes|y)$') {
   # Set-Theme
   Set-Wallpaper -ImagePath "C:\Windows\Web\Wallpaper\Windows\img19.jpg"
   Add-ClearPSHistoryFunction
+  Set-IntegratedServicesPolicyPermissions
   sudo config --enable normal
   Write-Host "Please reboot your system to complete the changes." -ForegroundColor Yellow
 }
