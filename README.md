@@ -12,11 +12,12 @@ irm https://raw.githubusercontent.com/ayu2805/wss/main/wss.ps1 | iex
 ### Remove unnecessary packages
 To remove unnecessary packages i.e. Store (UWP) Apps, run the following PowerShell command:
 ```powershell
+$Exceptions = 'Extension|NET|UI\.Xaml|Runtime|WindowsStore|WindowsNotepad|WindowsCalculator|Photos|VCLibs|ScreenSketch'
+
 Get-AppxPackage |
     Where-Object {
         $_.NonRemovable -eq $false -and
-        $_.PackageFullName -notmatch `
-            'Extension|NET|UI\.Xaml|Runtime|WindowsStore|WindowsNotepad|VCLibs|ScreenSketch'
+        $_.PackageFullName -notmatch $Exceptions
     } |
     ForEach-Object {
         Remove-AppxPackage -Package $_.PackageFullName
