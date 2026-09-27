@@ -328,6 +328,12 @@ if ($confirmRegistry -match '^(yes|y)$') {
         powercfg.exe /hibernate off
     }
 
+    # Optional Reserved Storage setting
+    $disableReservedStorage = Read-Host "Do you want to disable Reserved Storage? (y/N)"
+    if ($disableReservedStorage -match '^(yes|y)$') {
+        Set-WindowsReservedStorageState -State Disabled
+    }
+
     Stop-Service -Name DiagTrack -Force
     Set-Service -Name DiagTrack -StartupType Manual
   
