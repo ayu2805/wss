@@ -143,32 +143,6 @@ function Remove-RegistryKeys {
     }
 }
 
-function Set-Wallpaper {
-    param (
-        [string]$ImagePath
-    )
-
-    if (Test-Path $ImagePath) {
-        # Use the SystemParametersInfo function to change the wallpaper
-        $null = Add-Type -TypeDefinition @"
-    using System;
-    using System.Runtime.InteropServices;
-    public class Wallpaper {
-      [DllImport("user32.dll", CharSet = CharSet.Auto)]
-      public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
-    }
-"@
-        $SPI_SETDESKWALLPAPER = 20
-        $SPIF_UPDATEINIFILE = 0x01
-        $SPIF_SENDCHANGE = 0x02
-        [Wallpaper]::SystemParametersInfo($SPI_SETDESKWALLPAPER, 0, $ImagePath, $SPIF_UPDATEINIFILE -bor $SPIF_SENDCHANGE) | Out-Null
-        Write-Host "Wallpaper changed to $ImagePath" -ForegroundColor Green
-    }
-    else {
-        Write-Host "File not found: $ImagePath" -ForegroundColor Red
-    }
-}
-
 # Function to create configuration file
 function New-ConfigFile {
     $config = @"
@@ -292,6 +266,8 @@ if ($confirmRegistry -match '^(yes|y)$') {
         @{ Path = 'HKCU:\Software\Microsoft\Personalization\Settings'; Name = 'AcceptedPrivacyPolicy'; Value = 0; Type = 'DWord' },
         @{ Path = 'HKCU:\Software\Microsoft\Siuf\Rules'; Name = 'NumberOfSIUFInPeriod'; Value = 0; Type = 'DWord' },
         @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\CDP'; Name = 'EnablePromotionalAppsForShare'; Value = 0; Type = 'DWord' },
+        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager'; Name = 'RotatingLockScreenEnabled'; Value = 0; Type = 'DWord' },
+        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager'; Name = 'RotatingLockScreenOverlayEnabled'; Value = 0; Type = 'DWord' },
         @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\CPSS\Store\InkingAndTypingPersonalization'; Name = 'Value'; Value = 0; Type = 'DWord' },
         @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer'; Name = 'ShowCloudFilesInQuickAccess'; Value = 0; Type = 'DWord' },
         @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer'; Name = 'ShowFrequent'; Value = 0; Type = 'DWord' },
@@ -325,9 +301,8 @@ if ($confirmRegistry -match '^(yes|y)$') {
         @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\SystemSettings\AccountNotifications'; Name = 'EnableAccountNotifications'; Value = 0; Type = 'DWord' },
         @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Start'; Name = 'AllAppsViewMode'; Value = 2; Type = 'DWord' },
         @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Start'; Name = 'ShowRecentList'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize'; Name = 'AppsUseLightTheme'; Value = 0; Type = 'DWord' },
         @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize'; Name = 'EnableTransparency'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize'; Name = 'SystemUsesLightTheme'; Value = 0; Type = 'DWord' },
+        @{ Path = 'HKCU:\Software\Policies\Microsoft\Windows\CloudContent'; Name = 'DisableWindowsSpotlightFeatures'; Value = 1; Type = 'DWord' },
         @{ Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection'; Name = 'AllowTelemetry'; Value = 0; Type = 'DWord' },
         @{ Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer'; Name = 'SettingsPageVisibility'; Value = 'hide:home'; Type = 'String' },
         @{ Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'; Name = 'verbosestatus'; Value = 1; Type = 'DWord' },
@@ -355,15 +330,15 @@ if ($confirmRegistry -match '^(yes|y)$') {
     Stop-Service -Name DiagTrack -Force
     Set-Service -Name DiagTrack -StartupType Manual
   
-    Set-Wallpaper -ImagePath "C:\Windows\Web\Wallpaper\Windows\img19.jpg"
-    Add-ProfileFunction -FunctionName "Clear-PSHistory" -FunctionCode $ClearPSHistory
-    Add-ProfileFunction -FunctionName "Grant-UserAccess" -FunctionCode $GrantUserAccess
     Grant-UserAccess -FilePath "C:\Windows\System32\IntegratedServicesRegionPolicySet.json"
     Grant-UserAccess -FilePath "C:\ProgramData\USOPrivate\UpdateStore"
     sudo config --enable normal
     Write-Host "Please reboot your system to complete the changes." -ForegroundColor Yellow
 }
 
+Add-ProfileFunction -FunctionName "Clear-PSHistory" -FunctionCode $ClearPSHistory
+Add-ProfileFunction -FunctionName "Grant-UserAccess" -FunctionCode $GrantUserAccess
+    
 # Create temporary directory
 New-Item -ItemType Directory -Path "$env:TEMP\wss" -Force | Out-Null
 
