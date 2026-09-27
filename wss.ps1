@@ -289,7 +289,10 @@ if ($confirmRegistry -match '^(yes|y)$') {
         @{ Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'; Name = 'verbosestatus'; Value = 1; Type = 'DWord' },
         @{ Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'; Name = 'NoConnectedUser'; Value = 3; Type = 'DWord' },
         @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System'; Name = 'PublishUserActivities'; Value = 0; Type = 'DWord' },
+        @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System'; Name = 'EnableSmartScreen'; Value = 0; Type = 'DWord' },
+        @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WTDS\Components'; Name = 'CaptureThreatWindow'; Value = 0; Type = 'DWord' },
         @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\SystemRestore'; Name = 'DisableSR'; Value = 1; Type = 'DWord' },
+        @{ Path = 'HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy'; Name = 'VerifiedAndReputablePolicyState'; Value = 1; Type = 'DWord' },
         @{ Path = 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management'; Name = 'ClearPageFileAtShutdown'; Value = 1; Type = 'DWord' },
         @{ Path = 'HKU:\.DEFAULT\Control Panel\Keyboard'; Name = 'InitialKeyboardIndicators'; Value = 2; Type = 'String' }
     )
