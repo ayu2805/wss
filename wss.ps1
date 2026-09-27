@@ -243,7 +243,6 @@ if ($confirmRegistry -match '^(yes|y)$') {
         @{ Path = 'HKCU:\AppEvents\Schemes'; Name = '(Default)'; Value = ".None"; Type = 'String' },
         @{ Path = 'HKCU:\Control Panel\Desktop'; Name = 'FontSmoothing'; Value = 2; Type = 'String' },
         @{ Path = 'HKCU:\Control Panel\Desktop'; Name = 'DragFullWindows'; Value = 1; Type = 'String' },
-        @{ Path = 'HKCU:\Control Panel\Desktop'; Name = 'MinAnimate'; Value = 0; Type = 'String' },
         @{ Path = 'HKCU:\Control Panel\Desktop'; Name = 'UserPreferencesMask'; Value = [byte[]](90, 12, 3, 80, 12, 0, 0, 0); Type = 'Binary' },
         @{ Path = 'HKCU:\Control Panel\International\User Profile'; Name = 'HttpAcceptLanguageOptOut'; Value = 1; Type = 'DWord' },
         @{ Path = 'HKCU:\Software\Microsoft\InputPersonalization'; Name = 'RestrictImplicitInkCollection'; Value = 1; Type = 'DWord' },
