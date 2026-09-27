@@ -76,9 +76,6 @@ function Grant-UserAccess {
 }
 '@
 
-Add-ProfileFunction -FunctionName "Clear-PSHistory" -FunctionCode $ClearPSHistory
-Add-ProfileFunction -FunctionName "Grant-UserAccess" -FunctionCode $GrantUserAccess
-
 . $PROFILE
 
 # Function to check if running with administrative privileges
@@ -171,19 +168,6 @@ function Set-Wallpaper {
         Write-Host "File not found: $ImagePath" -ForegroundColor Red
     }
 }
-
-# Function to apply theme and restart explorer
-# function Set-Theme {
-#   try {
-#     Start-Process -FilePath "C:\Windows\Resources\Themes\dark.theme" -Wait -ErrorAction Stop
-#     Stop-Process -Name SystemSettings -ErrorAction SilentlyContinue
-#     Stop-Process -Name explorer -Force -ErrorAction Stop
-#     Write-Host "Theme applied and explorer restarted." -ForegroundColor Green
-#   }
-#   catch {
-#     Write-Error "Failed to apply theme: $_"
-#   }
-# }
 
 # Function to create configuration file
 function New-ConfigFile {
@@ -352,12 +336,6 @@ if ($confirmRegistry -match '^(yes|y)$') {
         @{ Path = 'HKU:\.DEFAULT\Control Panel\Keyboard'; Name = 'InitialKeyboardIndicators'; Value = 2; Type = 'String' }
     )
 
-    # Optional Hibernate setting
-    $disableHibernate = Read-Host "Do you want to disable hibernation? (y/N)"
-    if ($disableHibernate -match '^(yes|y)$') {
-        $registrySettings += @{ Path = 'HKLM:\SYSTEM\CurrentControlSet\Control\Power'; Name = 'HibernateEnabledDefault'; Value = 0; Type = 'DWord' }
-    }
-
     $keysToRemove = @(
         "HKCU:\Software\Microsoft\Siuf\Rules\PeriodInNanoSeconds",
         "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{f874310e-b6b7-47dc-bc84-b9e6b38f5903}",
@@ -367,12 +345,18 @@ if ($confirmRegistry -match '^(yes|y)$') {
     Update-RegistrySettings -settings $registrySettings
     Remove-RegistryKeys -keys $keysToRemove
 
+    # Optional Hibernate setting
+    $disableHibernate = Read-Host "Do you want to disable hibernation? (y/N)"
+    if ($disableHibernate -match '^(yes|y)$') {
+        powercfg.exe /hibernate off
+    }
+
     Stop-Service -Name DiagTrack -Force
     Set-Service -Name DiagTrack -StartupType Manual
   
-    # Set-Theme
     Set-Wallpaper -ImagePath "C:\Windows\Web\Wallpaper\Windows\img19.jpg"
-    Add-ClearPSHistoryFunction
+    Add-ProfileFunction -FunctionName "Clear-PSHistory" -FunctionCode $ClearPSHistory
+    Add-ProfileFunction -FunctionName "Grant-UserAccess" -FunctionCode $GrantUserAccess
     Grant-UserAccess -FilePath "C:\Windows\System32\IntegratedServicesRegionPolicySet.json"
     Grant-UserAccess -FilePath "C:\ProgramData\USOPrivate\UpdateStore"
     sudo config --enable normal
