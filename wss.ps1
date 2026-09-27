@@ -245,6 +245,7 @@ if ($confirmRegistry -match '^(yes|y)$') {
         @{ Path = 'HKCU:\Control Panel\Desktop'; Name = 'DragFullWindows'; Value = 1; Type = 'String' },
         @{ Path = 'HKCU:\Control Panel\Desktop'; Name = 'UserPreferencesMask'; Value = [byte[]](90, 12, 3, 80, 12, 0, 0, 0); Type = 'Binary' },
         @{ Path = 'HKCU:\Control Panel\International\User Profile'; Name = 'HttpAcceptLanguageOptOut'; Value = 1; Type = 'DWord' },
+        @{ Path = 'HKCU:\Software\Microsoft\Clipboard'; Name = 'EnableClipboardHistory'; Value = 1; Type = 'DWord' },
         @{ Path = 'HKCU:\Software\Microsoft\InputPersonalization'; Name = 'RestrictImplicitInkCollection'; Value = 1; Type = 'DWord' },
         @{ Path = 'HKCU:\Software\Microsoft\InputPersonalization'; Name = 'RestrictImplicitTextCollection'; Value = 1; Type = 'DWord' },
         @{ Path = 'HKCU:\Software\Microsoft\InputPersonalization\TrainedDataStore'; Name = 'HarvestContacts'; Value = 0; Type = 'DWord' },
