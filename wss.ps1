@@ -308,6 +308,7 @@ if ($confirmRegistry -match '^(yes|y)$') {
         @{ Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'; Name = 'verbosestatus'; Value = 1; Type = 'DWord' },
         @{ Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'; Name = 'NoConnectedUser'; Value = 3; Type = 'DWord' },
         @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System'; Name = 'PublishUserActivities'; Value = 0; Type = 'DWord' },
+        @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\SystemRestore'; Name = 'DisableSR'; Value = 1; Type = 'DWord' },
         @{ Path = 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management'; Name = 'ClearPageFileAtShutdown'; Value = 1; Type = 'DWord' },
         @{ Path = 'HKU:\.DEFAULT\Control Panel\Keyboard'; Name = 'InitialKeyboardIndicators'; Value = 2; Type = 'String' }
     )
@@ -321,17 +322,14 @@ if ($confirmRegistry -match '^(yes|y)$') {
     New-PSDrive -PSProvider Registry -Name HKU -Root HKEY_USERS -ErrorAction SilentlyContinue
     Update-RegistrySettings -settings $registrySettings
     Remove-RegistryKeys -keys $keysToRemove
+    
+    Set-WindowsReservedStorageState -State Disabled
+    vssadmin delete shadows /all /quiet
 
     # Optional Hibernate setting
     $disableHibernate = Read-Host "Do you want to disable hibernation? (y/N)"
     if ($disableHibernate -match '^(yes|y)$') {
         powercfg.exe /hibernate off
-    }
-
-    # Optional Reserved Storage setting
-    $disableReservedStorage = Read-Host "Do you want to disable Reserved Storage? (y/N)"
-    if ($disableReservedStorage -match '^(yes|y)$') {
-        Set-WindowsReservedStorageState -State Disabled
     }
 
     Stop-Service -Name DiagTrack -Force
