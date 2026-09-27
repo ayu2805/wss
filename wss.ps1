@@ -84,25 +84,6 @@ function Test-Admin {
     return $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
-# Function to change computer name
-function Set-ComputerName {
-    param (
-        [string]$newName
-    )
-    if ($newName -match '^[a-zA-Z0-9-]+$' -and $newName.Length -le 15) {
-        try {
-            Rename-Computer -NewName $newName -Force -ErrorAction Stop
-            Write-Host "Computer name changed successfully to $newName." -ForegroundColor Green
-        }
-        catch {
-            Write-Error "Failed to change computer name: $_"
-        }
-    }
-    else {
-        Write-Error "Invalid computer name. Please ensure it contains only letters, numbers, and hyphens, and is no longer than 15 characters."
-    }
-}
-
 # Function to update registry settings
 function Update-RegistrySettings {
     param (
@@ -113,7 +94,7 @@ function Update-RegistrySettings {
             if (-NOT (Test-Path $setting.Path)) {
                 New-Item -Path $setting.Path -Force | Out-Null
             }
-            Set-ItemProperty -Path $setting.Path -Name $setting.Name -Value $setting.Value -Type $setting.Type -Force -ErrorAction Stop
+            Set-ItemProperty -Path $setting.Path -Name $setting.Name -Value $setting.Value -Type $setting.Type -Force -ErrorAction SilentlyContinue
             Write-Host "Updated registry setting $($setting.Name) successfully." -ForegroundColor Green
         }
         catch {
@@ -130,7 +111,7 @@ function Remove-RegistryKeys {
     foreach ($key in $keys) {
         try {
             if (Test-Path $key) {
-                Remove-Item -Path $key -Recurse -Force -ErrorAction Stop
+                Remove-Item -Path $key -Recurse -Force -ErrorAction SilentlyContinue
                 Write-Host "Removed registry key $key successfully." -ForegroundColor Green
             }
             else {
@@ -250,7 +231,7 @@ if (-not (Test-Admin)) {
 
 $newComputerName = Read-Host "Please enter the new computer name (leave empty to do nothing)"
 if (-not [string]::IsNullOrWhiteSpace($newComputerName)) {
-    Set-ComputerName -newName $newComputerName
+    Rename-Computer -NewName $newComputerName -Force -ErrorAction SilentlyContinue
 }
 else {
     Write-Host "No new computer name entered. Exiting without changes." -ForegroundColor Yellow
