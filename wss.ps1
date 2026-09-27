@@ -322,12 +322,12 @@ if ($confirmRegistry -match '^(yes|y)$') {
     Grant-UserAccess -FilePath "C:\Windows\System32\IntegratedServicesRegionPolicySet.json"
     Grant-UserAccess -FilePath "C:\ProgramData\USOPrivate\UpdateStore"
     sudo config --enable normal
-    Write-Host "Please reboot your system to complete the changes." -ForegroundColor Yellow
 }
 
 Add-ProfileFunction -FunctionName "Clear-PSHistory" -FunctionCode $ClearPSHistory
 Add-ProfileFunction -FunctionName "Grant-UserAccess" -FunctionCode $GrantUserAccess
-    
+Write-Host "Please reboot your system to complete the changes.`n" -ForegroundColor Yellow
+
 # Create temporary directory
 New-Item -ItemType Directory -Path "$env:TEMP\wss" -Force | Out-Null
 
