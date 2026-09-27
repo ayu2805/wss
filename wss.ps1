@@ -240,6 +240,7 @@ else {
 $confirmRegistry = Read-Host "Do you want some basic customisation? (y/N)"
 if ($confirmRegistry -match '^(yes|y)$') {
     $registrySettings = @(
+        @{ Path = 'HKCU:\AppEvents\Schemes'; Name = '(Default)'; Value = ".None"; Type = 'String' },
         @{ Path = 'HKCU:\Control Panel\International\User Profile'; Name = 'HttpAcceptLanguageOptOut'; Value = 1; Type = 'DWord' },
         @{ Path = 'HKCU:\Software\Microsoft\InputPersonalization'; Name = 'RestrictImplicitInkCollection'; Value = 1; Type = 'DWord' },
         @{ Path = 'HKCU:\Software\Microsoft\InputPersonalization'; Name = 'RestrictImplicitTextCollection'; Value = 1; Type = 'DWord' },
@@ -286,8 +287,9 @@ if ($confirmRegistry -match '^(yes|y)$') {
         @{ Path = 'HKCU:\Software\Policies\Microsoft\Windows\CloudContent'; Name = 'DisableWindowsSpotlightFeatures'; Value = 1; Type = 'DWord' },
         @{ Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection'; Name = 'AllowTelemetry'; Value = 0; Type = 'DWord' },
         @{ Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer'; Name = 'SettingsPageVisibility'; Value = 'hide:home'; Type = 'String' },
-        @{ Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'; Name = 'verbosestatus'; Value = 1; Type = 'DWord' },
+        @{ Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'; Name = 'DisableStartupSound'; Value = 1; Type = 'DWord' },
         @{ Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'; Name = 'NoConnectedUser'; Value = 3; Type = 'DWord' },
+        @{ Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'; Name = 'verbosestatus'; Value = 1; Type = 'DWord' },
         @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System'; Name = 'PublishUserActivities'; Value = 0; Type = 'DWord' },
         @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System'; Name = 'EnableSmartScreen'; Value = 0; Type = 'DWord' },
         @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WTDS\Components'; Name = 'CaptureThreatWindow'; Value = 0; Type = 'DWord' },
