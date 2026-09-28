@@ -76,8 +76,6 @@ function Grant-UserAccess {
 }
 '@
 
-. $PROFILE
-
 # Function to check if running with administrative privileges
 function Test-Admin {
     $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -237,6 +235,10 @@ else {
     Write-Host "No new computer name entered. Exiting without changes." -ForegroundColor Yellow
 }
 
+Add-ProfileFunction -FunctionName "Clear-PSHistory" -FunctionCode $ClearPSHistory
+Add-ProfileFunction -FunctionName "Grant-UserAccess" -FunctionCode $GrantUserAccess
+. $PROFILE
+
 $confirmRegistry = Read-Host "Do you want some basic customisation? (y/N)"
 if ($confirmRegistry -match '^(yes|y)$') {
     $registrySettings = @(
@@ -341,8 +343,6 @@ if ($confirmRegistry -match '^(yes|y)$') {
     sudo config --enable normal
 }
 
-Add-ProfileFunction -FunctionName "Clear-PSHistory" -FunctionCode $ClearPSHistory
-Add-ProfileFunction -FunctionName "Grant-UserAccess" -FunctionCode $GrantUserAccess
 Write-Host "Please reboot your system to complete the changes.`n" -ForegroundColor Yellow
 
 # Create temporary directory
