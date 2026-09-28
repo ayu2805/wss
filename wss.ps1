@@ -325,8 +325,9 @@ if ($confirmRegistry -match '^(yes|y)$') {
     New-PSDrive -PSProvider Registry -Name HKU -Root HKEY_USERS -ErrorAction SilentlyContinue
     Update-RegistrySettings -settings $registrySettings
     Remove-RegistryKeys -keys $keysToRemove
-    
-    Set-WindowsReservedStorageState -State Disabled
+
+    try { Set-WindowsReservedStorageState -State Disabled }
+    catch { }
     vssadmin delete shadows /all /quiet
 
     # Optional Hibernate setting
