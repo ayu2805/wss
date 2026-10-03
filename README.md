@@ -9,8 +9,10 @@ irm https://raw.githubusercontent.com/ayu2805/wss/main/wss.ps1 | iex
 > Note: If you want to run setup git, run:\
 `irm https://raw.githubusercontent.com/ayu2805/wss/main/git-config.ps1 | iex`
 
-### Remove unnecessary packages
-To remove unnecessary packages i.e. Store (UWP) Apps, run the following PowerShell command:
+### Windows Debloat Management
+
+#### Remove unnecessary packages
+To remove unnecessary packages, run the following PowerShell command:
 ```powershell
 $Exceptions = 'Extension|NET|UI\.Xaml|Runtime|WindowsStore|WindowsNotepad|WindowsCalculator|Photos|VCLibs|ScreenSketch'
 
@@ -23,6 +25,37 @@ Get-AppxPackage |
         Remove-AppxPackage -Package $_.PackageFullName
     }
 ```
+
+#### Remove All Removable Optional Features
+To remove all removable optional features, run the following PowerShell command:
+```powershell
+Get-WindowsCapability -Online | Where-Object { $_.State -eq 'Installed' } | ForEach-Object {
+    $name = $_.Name
+    try {
+        Remove-WindowsCapability -Online -Name $name
+        Write-Host "Successfully removed: $name"
+    }
+    catch {
+        Write-Host "Skipped removal: $name"
+    }
+}
+```
+
+#### Remove All Removable Windows Features
+To check and disable all removable Windows features, run the following PowerShell command:
+```powershell
+Get-WindowsOptionalFeature -Online | Where-Object {$_.State -eq 'Enabled'} | ForEach-Object {
+    $name = $_.FeatureName
+    try {
+        Disable-WindowsOptionalFeature -Online -NoRestart -FeatureName $name
+        Write-Host "Successfully removed: $name"
+    }
+    catch {
+        Write-Host "Skipped removal: $name"
+    }
+}
+```
+
 ### Clear Windows Update History
 To clear the Windows Update history, run the following PowerShell commands:
 ```powershell
