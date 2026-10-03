@@ -92,7 +92,8 @@ function Set-EdgeAsUninstallable {
     $regionCode = $region.TwoLetterISORegionName
     
     if ($regions -notcontains $regionCode) {
-        $regions.Insert($regions.IndexOf('IT'), $regionCode)
+        $regions.Add($regionCode)
+        $regions.Sort()
     }
     
     $policy.conditions.region.enabled = $regions.ToArray()
