@@ -76,6 +76,22 @@ function Grant-UserAccess {
 }
 '@
 
+# Function to make MS Edge as Uninstallable
+function Set-EdgeAsUninstallable {
+    $path = 'C:\Windows\System32\IntegratedServicesRegionPolicySet.json'
+    $json = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+    $policy = $json.policies | Where-Object guid -eq '{1bca278a-5d11-4acf-ad2f-f9ab6d7f93a6}'
+    $regions = [System.Collections.Generic.List[string]]$policy.conditions.region.enabled
+    $regionCode = [System.Globalization.RegionInfo]::CurrentRegion.TwoLetterISORegionName
+    
+    if ($regions -notcontains $regionCode) {
+        $regions.Insert($regions.IndexOf('IT'), $regionCode)
+    }
+    
+    $policy.conditions.region.enabled = $regions.ToArray()
+    $json | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $path
+}
+
 # Function to check if running with administrative privileges
 function Test-Admin {
     $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -344,6 +360,7 @@ if ($confirmRegistry -match '^(yes|y)$') {
   
     Grant-UserAccess -FilePath "C:\Windows\System32\IntegratedServicesRegionPolicySet.json"
     Grant-UserAccess -FilePath "C:\ProgramData\USOPrivate\UpdateStore"
+    Set-EdgeAsUninstallable
     sudo config --enable normal
 }
 
