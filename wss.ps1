@@ -42,37 +42,40 @@ $GrantUserAccess = @'
 function Grant-UserAccess {
     param (
         [Parameter(Mandatory = $true)]
-        [string]$FilePath
+        [string[]]$FilePath
     )
-
-    if (-not (Test-Path -LiteralPath $FilePath)) {
-        Write-Error "The path does not exist: $FilePath"
-        return
-    }
 
     $usersAccount = [System.Security.Principal.NTAccount]"BUILTIN\Users"
     $administratorsAccount = [System.Security.Principal.NTAccount]"BUILTIN\Administrators"
 
-    $fileAcl = Get-Acl -Path $FilePath
+    $FilePath | ForEach-Object {
+        $path = $_
 
-    $fileAcl.SetOwner($usersAccount)
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            Write-Error "The file does not exist: $path"
+            return
+        }
 
-    $usersPermission = [System.Security.AccessControl.FileSystemAccessRule]::new(
-        $usersAccount,
-        "FullControl",
-        "Allow"
-    )
+        try {
+            $fileAcl = Get-Acl -LiteralPath $path
+            $fileAcl.SetOwner($usersAccount)
 
-    $administratorsPermission = [System.Security.AccessControl.FileSystemAccessRule]::new(
-        $administratorsAccount,
-        "FullControl",
-        "Allow"
-    )
+            $usersPermission = [System.Security.AccessControl.FileSystemAccessRule]::new(
+                $usersAccount, "FullControl", "Allow"
+            )
+            $administratorsPermission = [System.Security.AccessControl.FileSystemAccessRule]::new(
+                $administratorsAccount, "FullControl", "Allow"
+            )
 
-    $fileAcl.SetAccessRule($usersPermission)
-    $fileAcl.SetAccessRule($administratorsPermission)
+            $fileAcl.SetAccessRule($usersPermission)
+            $fileAcl.SetAccessRule($administratorsPermission)
 
-    Set-Acl -Path $FilePath -AclObject $fileAcl
+            Set-Acl -LiteralPath $path -AclObject $fileAcl -ErrorAction Stop
+        }
+        catch {
+            Write-Error "Could not update '$path': $_"
+        }
+    }
 }
 '@
 
@@ -367,9 +370,13 @@ if ($confirmRegistry -match '^(yes|y)$') {
     Set-Service -Name DiagTrack -StartupType Manual
   
     Grant-UserAccess -FilePath "C:\Windows\System32\IntegratedServicesRegionPolicySet.json"
-    Grant-UserAccess -FilePath "C:\ProgramData\USOPrivate\UpdateStore"
     Set-EdgeAsUninstallable
-    sudo config --enable normal
+    
+    if (Get-Command sudo.exe -ErrorAction SilentlyContinue) {
+        sudo.exe config --enable normal
+    } else {
+        Write-Error 'sudo.exe was not found. Windows Sudo requires Windows 11, version 24H2 or later.'
+    }
 }
 
 Write-Host "Please reboot your system to complete the changes.`n" -ForegroundColor Yellow
