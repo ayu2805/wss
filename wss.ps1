@@ -82,7 +82,14 @@ function Set-EdgeAsUninstallable {
     $json = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
     $policy = $json.policies | Where-Object guid -eq '{1bca278a-5d11-4acf-ad2f-f9ab6d7f93a6}'
     $regions = [System.Collections.Generic.List[string]]$policy.conditions.region.enabled
-    $regionCode = [System.Globalization.RegionInfo]::CurrentRegion.TwoLetterISORegionName
+    $geoId = (Get-WinHomeLocation).GeoID
+    $region = [System.Globalization.CultureInfo]::GetCultures('SpecificCultures') |
+        ForEach-Object {
+            [System.Globalization.RegionInfo]::new($_.Name)
+        } |
+        Where-Object GeoId -eq $geoId |
+        Select-Object -First 1
+    $regionCode = $region.TwoLetterISORegionName
     
     if ($regions -notcontains $regionCode) {
         $regions.Insert($regions.IndexOf('IT'), $regionCode)
