@@ -14,8 +14,7 @@ irm https://raw.githubusercontent.com/ayu2805/wss/main/wss.ps1 | iex
 #### Remove unnecessary packages
 To remove unnecessary packages, run the following PowerShell command:
 ```powershell
-$Exceptions = 'Extension|NET|UI\.Xaml|Runtime|WindowsStore|WindowsNotepad|WindowsCalculator|Photos|VCLibs|ScreenSketch'
-
+$Exceptions = 'Extension|NET|Photos|Runtime|ScreenSketch|UI\.Xaml|VCLibs|WindowsCalculator|WindowsCamera|WindowsNotepad|WindowsStore'
 Get-AppxPackage |
     Where-Object {
         $_.NonRemovable -eq $false -and
