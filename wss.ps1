@@ -1,5 +1,20 @@
-$ProgressPreference = 'SilentlyContinue'
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+$ProgressPreference = "SilentlyContinue"
+
+$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+
+if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Host "Script is not running with administrative privileges." -ForegroundColor Red
+    Write-Host "Please run PowerShell as Administrator." -ForegroundColor Yellow
+    return
+}
+
+$newComputerName = Read-Host "Please enter the new computer name (leave empty to do nothing)"
+if ([string]::IsNullOrWhiteSpace($newComputerName)) {
+    Write-Host "No new computer name entered. Exiting without changes." -ForegroundColor Yellow
+}
+else {
+    Rename-Computer -NewName $newComputerName -Force -ErrorAction SilentlyContinue
+}
 
 # Function to add custom functions to the PowerShell profile
 function Add-ProfileFunction {
@@ -24,7 +39,7 @@ function Add-ProfileFunction {
     }
 }
 
-$ClearPSHistory = @'
+Add-ProfileFunction -FunctionName "Clear-PSHistory" -FunctionCode @'
 function Clear-PSHistory {
     $historyPath = (Get-PSReadLineOption).HistorySavePath
 
@@ -38,7 +53,7 @@ function Clear-PSHistory {
 }
 '@
 
-$GrantUserAccess = @'
+Add-ProfileFunction -FunctionName "Grant-UserAccess" -FunctionCode @'
 function Grant-UserAccess {
     param (
         [Parameter(Mandatory = $true)]
@@ -73,20 +88,22 @@ function Grant-UserAccess {
             Set-Acl -LiteralPath $path -AclObject $fileAcl -ErrorAction Stop
         }
         catch {
-            Write-Error "Could not update '$path': $_"
+            Write-Error "Could not update "$path": $_"
         }
     }
 }
 '@
 
+. $PROFILE
+
 # Function to make MS Edge as Uninstallable
 function Set-EdgeAsUninstallable {
-    $path = 'C:\Windows\System32\IntegratedServicesRegionPolicySet.json'
+    $path = "C:\Windows\System32\IntegratedServicesRegionPolicySet.json"
     $json = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
-    $policy = $json.policies | Where-Object guid -eq '{1bca278a-5d11-4acf-ad2f-f9ab6d7f93a6}'
+    $policy = $json.policies | Where-Object guid -eq "{1bca278a-5d11-4acf-ad2f-f9ab6d7f93a6}"
     $regions = [System.Collections.Generic.List[string]]$policy.conditions.region.enabled
     $geoId = (Get-WinHomeLocation).GeoID
-    $region = [System.Globalization.CultureInfo]::GetCultures('SpecificCultures') |
+    $region = [System.Globalization.CultureInfo]::GetCultures("SpecificCultures") |
         ForEach-Object {
             [System.Globalization.RegionInfo]::new($_.Name)
         } |
@@ -103,55 +120,283 @@ function Set-EdgeAsUninstallable {
     $json | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $path
 }
 
-# Function to check if running with administrative privileges
-function Test-Admin {
-    $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-    return $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-}
-
-# Function to update registry settings
-function Update-RegistrySettings {
+# Function to set registry settings
+function Set-RegistrySettings {
     param (
-        [array]$settings
+        [Parameter(Mandatory)]
+        [array]$keys
     )
-    foreach ($setting in $settings) {
-        try {
-            if (-NOT (Test-Path $setting.Path)) {
-                New-Item -Path $setting.Path -Force | Out-Null
-            }
-            Set-ItemProperty -Path $setting.Path -Name $setting.Name -Value $setting.Value -Type $setting.Type -Force -ErrorAction SilentlyContinue
-            Write-Host "Updated registry setting $($setting.Name) successfully." -ForegroundColor Green
+    foreach ($key in $keys) {
+        if (-NOT (Test-Path $key.Path)) {
+            New-Item -Path $key.Path -Force | Out-Null
         }
-        catch {
-            Write-Error "Failed to update registry setting $($setting.Name): $_"
-        }
+        New-ItemProperty -Path $key.Path -Name $key.Name -Value $key.Value -Type $key.Type -Force -ErrorAction SilentlyContinue
+        Write-Host "Updated registry setting $($key.Name) successfully." -ForegroundColor Green
     }
 }
 
 # Function to remove registry keys
 function Remove-RegistryKeys {
     param (
+        [Parameter(Mandatory)]
         [array]$keys
     )
     foreach ($key in $keys) {
-        try {
-            if (Test-Path $key) {
-                Remove-Item -Path $key -Recurse -Force -ErrorAction SilentlyContinue
-                Write-Host "Removed registry key $key successfully." -ForegroundColor Green
-            }
-            else {
-                Write-Host "Registry key $key does not exist." -ForegroundColor Yellow
-            }
+        if (Test-Path $key) {
+            Remove-Item -Path $key -Recurse -Force -ErrorAction SilentlyContinue
+            Write-Host "Removed registry key $key successfully." -ForegroundColor Green
         }
-        catch {
-            Write-Error "Failed to remove registry key $($key): $_"
+        else {
+            Write-Host "Registry key $key does not exist." -ForegroundColor Yellow
         }
     }
 }
 
-# Function to create configuration file
-function New-ConfigFile {
-    $config = @"
+$confirmRegistry = Read-Host "Do you want some basic customisation? (y/N)"
+if ($confirmRegistry -match "^(yes|y)$") {
+    $keysToSet = @(
+        @{ Path = "HKCU:\AppEvents\Schemes"; Name = "(Default)"; Value = ".None"; Type = "String" },
+        @{ Path = "HKCU:\Control Panel\Desktop"; Name = "DragFullWindows"; Value = 1; Type = "String" },
+        @{ Path = "HKCU:\Control Panel\Desktop"; Name = "FontSmoothing"; Value = 2; Type = "String" },
+        @{ Path = "HKCU:\Control Panel\Desktop"; Name = "UserPreferencesMask"; Value = [byte[]](0x90, 0x12, 0x03, 0x80, 0x10, 0x00, 0x00, 0x00); Type = "Binary" },
+        @{ Path = "HKCU:\Control Panel\International\User Profile"; Name = "HttpAcceptLanguageOptOut"; Value = 1; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Clipboard"; Name = "EnableClipboardHistory"; Value = 1; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\InputPersonalization"; Name = "RestrictImplicitInkCollection"; Value = 1; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\InputPersonalization"; Name = "RestrictImplicitTextCollection"; Value = 1; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\InputPersonalization\TrainedDataStore"; Name = "HarvestContacts"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Personalization\Settings"; Name = "AcceptedPrivacyPolicy"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Siuf\Rules"; Name = "NumberOfSIUFInPeriod"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\CDP"; Name = "EnablePromotionalAppsForShare"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\CPSS\Store\InkingAndTypingPersonalization"; Name = "Value"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"; Name = "RotatingLockScreenEnabled"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"; Name = "RotatingLockScreenOverlayEnabled"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"; Name = "SubscribedContent-338389Enabled"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"; Name = "SubscribedContent-338393Enabled"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"; Name = "SubscribedContent-353694Enabled"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"; Name = "SubscribedContent-353696Enabled"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer"; Name = "ShowCloudFilesInQuickAccess"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer"; Name = "ShowFrequent"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer"; Name = "ShowRecent"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "EnableSnapAssistFlyout"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "EnableSnapBar"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "EnableTaskGroups"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "Hidden"; Value = 1; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "HideFileExt"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "IconsOnly"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "LaunchTo"; Value = 1; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "ListviewAlphaSelect"; Value = 1; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "ListviewShadow"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "MultiTaskingAltTabFilter"; Value = 3; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "ShowTaskViewButton"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "SnapAssist"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "Start_AccountNotifications"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "Start_IrisRecommendations"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "Start_Layout"; Value = 1; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "Start_TrackDocs"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "Start_TrackProgs"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "TaskbarAl"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "TaskbarAnimations"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"; Name = "UseCompactMode"; Value = 1; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\TaskbarDeveloperSettings"; Name = "TaskbarEndTask"; Value = 1; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers"; Name = "DisableAutoplay"; Value = 1; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize"; Name = "Startupdelayinmsec"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects"; Name = "VisualFXSetting"; Value = 3; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search"; Name = "BingSearchEnabled"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search"; Name = "SearchboxTaskbarMode"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\SearchSettings"; Name = "IsAADCloudSearchEnabled"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\SearchSettings"; Name = "IsDeviceSearchHistoryEnabled"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\SearchSettings"; Name = "IsDynamicSearchBoxEnabled"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\SearchSettings"; Name = "IsMSACloudSearchEnabled"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\SearchSettings"; Name = "IsStoreSuggestionsEnabled"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\SearchSettings"; Name = "IsWebSuggestionsEnabled"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\SearchSettings"; Name = "SafeSearchMode"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Start"; Name = "AllAppsViewMode"; Value = 2; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Start"; Name = "ShowPinnedSection"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Start"; Name = "ShowRecentList"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Start"; Name = "ShowRecentSection"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Start"; Name = "ShowSuggestedFiles"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\SystemSettings\AccountNotifications"; Name = "EnableAccountNotifications"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"; Name = "EnableTransparency"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\UserProfileEngagement"; Name = "ScoobeSystemSettingEnabled"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\DWM"; Name = "AlwaysHibernateThumbnails"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Microsoft\Windows\DWM"; Name = "EnableAeroPeek"; Value = 0; Type = "DWord" },
+        @{ Path = "HKCU:\Software\Policies\Microsoft\Windows\CloudContent"; Name = "DisableWindowsSpotlightFeatures"; Value = 1; Type = "DWord" },
+        @{ Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer"; Name = "SettingsPageVisibility"; Value = "hide:home"; Type = "String" },
+        @{ Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"; Name = "DisableStartupSound"; Value = 1; Type = "DWord" },
+        @{ Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"; Name = "NoConnectedUser"; Value = 3; Type = "DWord" },
+        @{ Path = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"; Name = "verbosestatus"; Value = 1; Type = "DWord" },
+        @{ Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\SystemRestore"; Name = "DisableSR"; Value = 1; Type = "DWord" },
+        @{ Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"; Name = "AllowTelemetry"; Value = 0; Type = "DWord" },
+        @{ Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System"; Name = "EnableSmartScreen"; Value = 0; Type = "DWord" },
+        @{ Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System"; Name = "PublishUserActivities"; Value = 0; Type = "DWord" },
+        @{ Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WTDS\Components"; Name = "CaptureThreatWindow"; Value = 0; Type = "DWord" },
+        @{ Path = "HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy"; Name = "VerifiedAndReputablePolicyState"; Value = 1; Type = "DWord" },
+        @{ Path = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management"; Name = "ClearPageFileAtShutdown"; Value = 1; Type = "DWord" }
+    )
+
+    $keysToRemove = @(
+        "HKCU:\Software\Microsoft\Siuf\Rules\PeriodInNanoSeconds",
+        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{f874310e-b6b7-47dc-bc84-b9e6b38f5903}",
+        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{e88865ea-0e1c-4e20-9aa6-edcd0212c87c}"
+    )
+    
+    Set-RegistrySettings -keys $keysToSet
+    Remove-RegistryKeys -keys $keysToRemove
+
+    # Disable reserved storage
+    try { Set-WindowsReservedStorageState -State Disabled }
+    catch { }
+
+    # Delete all restore points on all drives
+    vssadmin delete shadows /all /quiet
+
+    # Disable hibernation
+    powercfg.exe /hibernate off
+
+    Stop-Service -Name DiagTrack -Force
+    Set-Service -Name DiagTrack -StartupType Manual
+  
+    Grant-UserAccess -FilePath "C:\Windows\System32\IntegratedServicesRegionPolicySet.json"
+    Set-EdgeAsUninstallable
+    
+    if (Get-Command sudo.exe -ErrorAction SilentlyContinue) {
+        sudo.exe config --enable normal
+    } else {
+        Write-Error "sudo.exe was not found. Windows Sudo requires Windows 11, version 24H2 or later."
+    }
+}
+
+# Remove all removable packages
+function Remove-RemovableAppxPackages {
+    $Exceptions = "Extension|NET|Photos|Runtime|ScreenSketch|Xaml|VCLibs|WindowsCalculator|WindowsCamera|WindowsNotepad|WindowsStore"
+
+    Get-AppxPackage |
+        Where-Object {
+            $_.NonRemovable -eq $false -and
+            $_.PackageFullName -notmatch $Exceptions
+        } |
+        ForEach-Object {
+            Remove-AppxPackage -Package $_.PackageFullName
+        }
+}
+
+# Remove all removable optional features
+function Remove-RemovableWindowsCapabilities {
+    Get-WindowsCapability -Online |
+        Where-Object { $_.State -eq "Installed" } |
+        ForEach-Object {
+            $name = $_.Name
+            try {
+                Remove-WindowsCapability -Online -Name $name
+                Write-Host "Successfully removed: $name"
+            }
+            catch {
+                Write-Host "`nSkipped removal: $name"
+            }
+        }
+}
+
+# Disable all enabled optional features
+function Remove-RemovableOptionalFeatures {
+    Get-WindowsOptionalFeature -Online |
+        Where-Object { $_.State -eq "Enabled" } |
+        ForEach-Object {
+            $name = $_.FeatureName
+            try {
+                Disable-WindowsOptionalFeature -Online -NoRestart -FeatureName $name
+                Write-Host "Successfully disabled: $name"
+            }
+            catch {
+                Write-Host "`nSkipped disabling: $name"
+            }
+        }
+}
+
+# Clear Windows Update history
+function Clear-WindowsUpdateHistory {
+    $path = "C:\ProgramData\USOPrivate\UpdateStore"
+
+    Stop-Service -Name UsoSvc, wuauserv -Force -ErrorAction SilentlyContinue
+
+    # Grant-UserAccess must be defined or available in your environment.
+    Grant-UserAccess -FilePath "$path\store.db", "$path\store.bak" `
+        -ErrorAction SilentlyContinue
+
+    Remove-Item -Path @(
+        "$path\store.db",
+        "$path\store.bak",
+        "C:\Windows\SoftwareDistribution\DataStore\Logs\edb.log"
+    ) -ErrorAction SilentlyContinue
+
+    Start-Service -Name UsoSvc, wuauserv -ErrorAction SilentlyContinue
+}
+
+# Create temporary directory for installers
+$InstallerDirectory = Join-Path $env:TEMP "wss"
+New-Item -ItemType Directory -Path $InstallerDirectory -Force | Out-Null
+
+# Shared download-and-install function
+function Install-DownloadedApplication {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Name,
+
+        [Parameter(Mandatory)]
+        [string]$Url,
+
+        [Parameter(Mandatory)]
+        [string]$FileName,
+
+        [string]$Arguments
+    )
+
+    $output = Join-Path $InstallerDirectory $FileName
+
+    try {
+        Write-Host "Downloading $Name..."
+        Invoke-WebRequest -Uri $Url -OutFile $output -ErrorAction Stop
+
+        Write-Host "Installing $Name..."
+        $process = Start-Process -FilePath $output -ArgumentList $Arguments -Wait -PassThru
+
+        if ($process.ExitCode -eq 0) {
+            Write-Host "$Name installed successfully."
+        }
+        else {
+            Write-Warning "$Name installer exited with code $($process.ExitCode)."
+        }
+    }
+    catch {
+        Write-Error "Failed to download or install $Name`: $_"
+    }
+}
+
+function Install-CloudflareWarp {
+    Install-DownloadedApplication `
+        -Name "Cloudflare WARP" `
+        -Url "https://1111-releases.cloudflareclient.com/win/latest" `
+        -FileName "CloudflareWarp.msi" `
+        -Arguments "/quiet"
+}
+
+function Install-MozillaFirefox {
+    Install-DownloadedApplication `
+        -Name "Mozilla Firefox" `
+        -Url "https://download.mozilla.org/?product=firefox-msi-latest-ssl&os=win64&lang=en-GB" `
+        -FileName "MozillaFirefox.msi" `
+        -Arguments "/quiet"
+}
+
+function Install-GoogleChrome {
+    Install-DownloadedApplication `
+        -Name "Google Chrome" `
+        -Url "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi" `
+        -FileName "GoogleChrome.msi" `
+        -Arguments "/quiet"
+}
+
+function Install-MicrosoftOffice365 {
+   Set-Content -Path "$Env:TEMP\Configuration.xml" -Value @'
 <Configuration ID="03cdf0e8-2737-4d2f-b1b8-d50a6103046d">
   <Add OfficeClientEdition="64" Channel="Current">
     <Product ID="O365ProPlusRetail">
@@ -175,300 +420,64 @@ function New-ConfigFile {
   <RemoveMSI />
   <Display Level="Full" AcceptEULA="TRUE" />
 </Configuration>
-"@
-    Set-Content -Path "$Env:TEMP\Configuration.xml" -Value $config
-    Write-Host "Configuration file created successfully." -ForegroundColor Green
+'@
+    Install-DownloadedApplication `
+        -Name "Microsoft 365" `
+        -Url "https://officecdn.microsoft.com/pr/wsus/setup.exe" `
+        -FileName "OfficeSetup.exe" `
+        -Arguments "/configure $Env:TEMP\Configuration.xml"
 }
 
-# Function to convert menu selection
-function Convert-MenuSelection {
-    param (
-        [string]$selection
-    )
-    $selected = @()
-    $parts = $selection -split ','
-    foreach ($part in $parts) {
-        if ($part -match "^(\d+)-(\d+)$") {
-            $start = [int]$matches[1]
-            $end = [int]$matches[2]
-            $selected += $start..$end
-        }
-        elseif ($part -match "^\d+$") {
-            $selected += [int]$part
-        }
-    }
-    return ($selected | Sort-Object -Unique)
+function Install-TelegramDesktop {
+    Install-DownloadedApplication `
+        -Name "Telegram Desktop" `
+        -Url "https://telegram.org/dl/desktop/win64" `
+        -FileName "TelegramDesktop.exe" `
+        -Arguments "/verysilent"
 }
 
-# Function to display menu options
-function Show-Menu {
-    Write-Host "=== Menu Options ==="
-    Write-Host "0. Quit"
-    for ($i = 0; $i -lt $menuOptions.Count; $i++) {
-        Write-Host "Install $($i + 1). $($menuOptions[$i].Label)"
-    }
-    Write-Host "`nYou can select multiple options:"
-    Write-Host "- Single numbers (e.g., 1,3,5)"
-    Write-Host "- Ranges (e.g., 1-3)"
-    Write-Host "- Combinations (e.g., 1-3,5)"
+function Install-VisualStudioCode {
+    Install-DownloadedApplication `
+        -Name "Visual Studio Code" `
+        -Url "https://code.visualstudio.com/?build=stable&dv=win64" `
+        -FileName "VSCodeSetup.exe" `
+        -Arguments "/verysilent /mergetasks=!runcode"
 }
 
-# Function to execute selected command
-function Invoke-Command {
-    param (
-        [int]$option
-    )
-    $menuOption = $menuOptions[$option - 1]
-    if ($menuOption.Url) {
-        Write-Host "Downloading $($menuOption.Label)..." -ForegroundColor Yellow
-        try {
-            Invoke-WebRequest -Uri $menuOption.Url -OutFile "$Env:TEMP\wss\$($menuOption.FileName)" -ErrorAction Stop
-            if ($menuOption.Label -eq "Microsoft Office 365") {
-                New-ConfigFile
-            }
-            Write-Host "Installing $($menuOption.Label)..." -ForegroundColor Yellow
-            Start-Process -FilePath "$Env:TEMP\wss\$($menuOption.FileName)" -ArgumentList $menuOption.Arguments -Wait -ErrorAction Stop
-            Write-Host "Installation of $($menuOption.Label) has been completed." -ForegroundColor Green
-        }
-        catch {
-            Write-Error "Failed to download or install $($menuOption.Label): $_"
-        }
-    }
-    elseif ($menuOption.Script) {
-        Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
-        Write-Host "Installing $($menuOption.Label)..." -ForegroundColor Yellow
-        try {
-            & $menuOption.Script
-            Write-Host "Installation of $($menuOption.Label) has been completed." -ForegroundColor Green
-        }
-        catch {
-            Write-Error "Failed to install $($menuOption.Label): $_"
-        }
-    }
+$menuOptions = @{
+    "1"  = @{ Name = "Install Cloudflare WARP";      Action = { Install-CloudflareWarp } }
+    "2"  = @{ Name = "Install Google Chrome";        Action = { Install-GoogleChrome } }
+    "3"  = @{ Name = "Install Microsoft Office 365"; Action = { Install-MicrosoftOffice365 } }
+    "4"  = @{ Name = "Install Mozilla Firefox";      Action = { Install-MozillaFirefox } }
+    "5"  = @{ Name = "Install Telegram Desktop";     Action = { Install-TelegramDesktop } }
+    "6"  = @{ Name = "Install Visual Studio Code";   Action = { Install-VisualStudioCode } }
+    "7"  = @{ Name = "Remove Appx packages";         Action = { Remove-RemovableAppxPackages } }
+    "8"  = @{ Name = "Remove Optional Features";     Action = { Remove-RemovableOptionalFeatures } }
+    "9"  = @{ Name = "Disable Windows features";     Action = { Disable-WindowsFeatures } }
+    "10" = @{ Name = "Clear Windows Update history"; Action = { Clear-WindowsUpdateHistory } }
 }
 
-# Main script execution
-if (-not (Test-Admin)) {
-    Write-Host "Script is not running with administrative privileges." -ForegroundColor Red
-    Write-Host "Please run PowerShell as Administrator." -ForegroundColor Yellow
-    return
-}
-
-$newComputerName = Read-Host "Please enter the new computer name (leave empty to do nothing)"
-if (-not [string]::IsNullOrWhiteSpace($newComputerName)) {
-    Rename-Computer -NewName $newComputerName -Force -ErrorAction SilentlyContinue
-}
-else {
-    Write-Host "No new computer name entered. Exiting without changes." -ForegroundColor Yellow
-}
-
-Add-ProfileFunction -FunctionName "Clear-PSHistory" -FunctionCode $ClearPSHistory
-Add-ProfileFunction -FunctionName "Grant-UserAccess" -FunctionCode $GrantUserAccess
-. $PROFILE
-
-$confirmRegistry = Read-Host "Do you want some basic customisation? (y/N)"
-if ($confirmRegistry -match '^(yes|y)$') {
-    $registrySettings = @(
-        @{ Path = 'HKCU:\AppEvents\Schemes'; Name = '(Default)'; Value = ".None"; Type = 'String' },
-        @{ Path = 'HKCU:\Control Panel\Desktop'; Name = 'DragFullWindows'; Value = 1; Type = 'String' },
-        @{ Path = 'HKCU:\Control Panel\Desktop'; Name = 'FontSmoothing'; Value = 2; Type = 'String' },
-        @{ Path = 'HKCU:\Control Panel\Desktop'; Name = 'UserPreferencesMask'; Value = [byte[]](0x90, 0x12, 0x03, 0x80, 0x10, 0x00, 0x00, 0x00); Type = 'Binary' },
-        @{ Path = 'HKCU:\Control Panel\International\User Profile'; Name = 'HttpAcceptLanguageOptOut'; Value = 1; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Clipboard'; Name = 'EnableClipboardHistory'; Value = 1; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\InputPersonalization'; Name = 'RestrictImplicitInkCollection'; Value = 1; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\InputPersonalization'; Name = 'RestrictImplicitTextCollection'; Value = 1; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\InputPersonalization\TrainedDataStore'; Name = 'HarvestContacts'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Personalization\Settings'; Name = 'AcceptedPrivacyPolicy'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Siuf\Rules'; Name = 'NumberOfSIUFInPeriod'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\CDP'; Name = 'EnablePromotionalAppsForShare'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\CPSS\Store\InkingAndTypingPersonalization'; Name = 'Value'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager'; Name = 'RotatingLockScreenEnabled'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager'; Name = 'RotatingLockScreenOverlayEnabled'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager'; Name = 'SubscribedContent-338389Enabled'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager'; Name = 'SubscribedContent-338393Enabled'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager'; Name = 'SubscribedContent-353694Enabled'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager'; Name = 'SubscribedContent-353696Enabled'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer'; Name = 'ShowCloudFilesInQuickAccess'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer'; Name = 'ShowFrequent'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer'; Name = 'ShowRecent'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'EnableSnapAssistFlyout'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'EnableSnapBar'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'EnableTaskGroups'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'Hidden'; Value = 1; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'HideFileExt'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'IconsOnly'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'LaunchTo'; Value = 1; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'ListviewAlphaSelect'; Value = 1; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'ListviewShadow'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'MultiTaskingAltTabFilter'; Value = 3; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'ShowTaskViewButton'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'SnapAssist'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'Start_AccountNotifications'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'Start_IrisRecommendations'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'Start_Layout'; Value = 1; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'Start_TrackDocs'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'Start_TrackProgs'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'TaskbarAl'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'TaskbarAnimations'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'; Name = 'UseCompactMode'; Value = 1; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\TaskbarDeveloperSettings'; Name = 'TaskbarEndTask'; Value = 1; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers'; Name = 'DisableAutoplay'; Value = 1; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize'; Name = 'Startupdelayinmsec'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects'; Name = 'VisualFXSetting'; Value = 3; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search'; Name = 'BingSearchEnabled'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search'; Name = 'SearchboxTaskbarMode'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\SearchSettings'; Name = 'IsAADCloudSearchEnabled'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\SearchSettings'; Name = 'IsDeviceSearchHistoryEnabled'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\SearchSettings'; Name = 'IsDynamicSearchBoxEnabled'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\SearchSettings'; Name = 'IsMSACloudSearchEnabled'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\SearchSettings'; Name = 'IsStoreSuggestionsEnabled'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\SearchSettings'; Name = 'IsWebSuggestionsEnabled'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\SearchSettings'; Name = 'SafeSearchMode'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Start'; Name = 'AllAppsViewMode'; Value = 2; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Start'; Name = 'ShowPinnedSection'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Start'; Name = 'ShowRecentList'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Start'; Name = 'ShowRecentSection'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Start'; Name = 'ShowSuggestedFiles'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\SystemSettings\AccountNotifications'; Name = 'EnableAccountNotifications'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize'; Name = 'EnableTransparency'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\UserProfileEngagement'; Name = 'ScoobeSystemSettingEnabled'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\DWM'; Name = 'AlwaysHibernateThumbnails'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Microsoft\Windows\DWM'; Name = 'EnableAeroPeek'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKCU:\Software\Policies\Microsoft\Windows\CloudContent'; Name = 'DisableWindowsSpotlightFeatures'; Value = 1; Type = 'DWord' },
-        @{ Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer'; Name = 'SettingsPageVisibility'; Value = 'hide:home'; Type = 'String' },
-        @{ Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'; Name = 'DisableStartupSound'; Value = 1; Type = 'DWord' },
-        @{ Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'; Name = 'NoConnectedUser'; Value = 3; Type = 'DWord' },
-        @{ Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'; Name = 'verbosestatus'; Value = 1; Type = 'DWord' },
-        @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\SystemRestore'; Name = 'DisableSR'; Value = 1; Type = 'DWord' },
-        @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection'; Name = 'AllowTelemetry'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System'; Name = 'EnableSmartScreen'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System'; Name = 'PublishUserActivities'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WTDS\Components'; Name = 'CaptureThreatWindow'; Value = 0; Type = 'DWord' },
-        @{ Path = 'HKLM:\SYSTEM\CurrentControlSet\Control\CI\Policy'; Name = 'VerifiedAndReputablePolicyState'; Value = 1; Type = 'DWord' },
-        @{ Path = 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management'; Name = 'ClearPageFileAtShutdown'; Value = 1; Type = 'DWord' }
-    )
-
-    $keysToRemove = @(
-        "HKCU:\Software\Microsoft\Siuf\Rules\PeriodInNanoSeconds",
-        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{f874310e-b6b7-47dc-bc84-b9e6b38f5903}",
-        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{e88865ea-0e1c-4e20-9aa6-edcd0212c87c}"
-    )
-    
-    Update-RegistrySettings -settings $registrySettings
-    Remove-RegistryKeys -keys $keysToRemove
-
-    try { Set-WindowsReservedStorageState -State Disabled }
-    catch { }
-    vssadmin delete shadows /all /quiet
-
-    # Optional Hibernate setting
-    $disableHibernate = Read-Host "Do you want to disable hibernation? (y/N)"
-    if ($disableHibernate -match '^(yes|y)$') {
-        powercfg.exe /hibernate off
-    }
-
-    Stop-Service -Name DiagTrack -Force
-    Set-Service -Name DiagTrack -StartupType Manual
-  
-    Grant-UserAccess -FilePath "C:\Windows\System32\IntegratedServicesRegionPolicySet.json"
-    Set-EdgeAsUninstallable
-    
-    if (Get-Command sudo.exe -ErrorAction SilentlyContinue) {
-        sudo.exe config --enable normal
-    } else {
-        Write-Error 'sudo.exe was not found. Windows Sudo requires Windows 11, version 24H2 or later.'
-    }
-}
-
-$confirmDebloat = Read-Host "Do you want to debloat Windows? (y/N)"
-if ($confirmDebloat -match '^(yes|y)$') {
-
-    $confirmPackages = Read-Host "Do you want to remove unnecessary packages? (y/N)"
-    if ($confirmPackages -match '^(yes|y)$') {
-        $Exceptions = 'Extension|NET|Photos|Runtime|ScreenSketch|UI\.Xaml|VCLibs|WindowsCalculator|WindowsCamera|WindowsNotepad|WindowsStore'
-        Get-AppxPackage | Where-Object {
-            $_.NonRemovable -eq $false -and
-            $_.PackageFullName -notmatch $Exceptions
-        } |
-        ForEach-Object {
-            Remove-AppxPackage -Package $_.PackageFullName
-        }
-    }
-
-    $confirmOptionalFeatures = Read-Host "Do you want to remove all removable optional features? (y/N)"
-    if ($confirmOptionalFeatures -match '^(yes|y)$') {
-        Get-WindowsCapability -Online | Where-Object { $_.State -eq 'Installed' } | ForEach-Object {
-            $name = $_.Name
-            try {
-                Remove-WindowsCapability -Online -Name $name
-                Write-Host "Successfully removed: $name"
-            }
-            catch {
-                Write-Host "Skipped removal: $name"
-            }
-        }
-    }
-
-    $confirmWindowsFeatures = Read-Host "Do you want to remove all removable windows features? (y/N)"
-    if ($confirmWindowsFeatures -match '^(yes|y)$') {
-        Get-WindowsOptionalFeature -Online | Where-Object {$_.State -eq 'Enabled'} | ForEach-Object {
-            $name = $_.FeatureName
-            try {
-                Disable-WindowsOptionalFeature -Online -NoRestart -FeatureName $name
-                Write-Host "Successfully removed: $name"
-            }
-            catch {
-                Write-Host "Skipped removal: $name"
-            }
-        }
-    }
-
-    $confirmUpdateHistory = Read-Host "Do you want to clear windows update history? (y/N)"
-    if ($confirmUpdateHistory -match '^(yes|y)$') {
-        $path = "C:\ProgramData\USOPrivate\UpdateStore"
-        Stop-Service -Name UsoSvc, wuauserv -Force -ErrorAction SilentlyContinue
-        Grant-UserAccess -FilePath "$path\store.db", "$path\store.bak" -ErrorAction SilentlyContinue
-        Remove-Item -Path "$path\store.db", "$path\store.bak", "C:\Windows\SoftwareDistribution\DataStore\Logs\edb.log" -ErrorAction SilentlyContinue
-        Start-Service -Name UsoSvc, wuauserv -ErrorAction SilentlyContinue
-    }
-}
-
-Write-Host "Please reboot your system to complete the changes.`n" -ForegroundColor Yellow
-
-# Create temporary directory
-New-Item -ItemType Directory -Path "$env:TEMP\wss" -Force | Out-Null
-
-# Define menu options
-$menuOptions = @(
-    @{ Label = "Cloudflare Warp"; Url = "https://1111-releases.cloudflareclient.com/win/latest"; FileName = "CloudflareWarp.msi"; Arguments = "/quiet" },
-    @{ Label = "Firefox"; Url = "https://download.mozilla.org/?product=firefox-latest&os=win64&lang=en-GB"; FileName = "FirefoxSetup.exe"; Arguments = "/s" },
-    @{ Label = "Google Chrome"; Url = "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"; FileName = "GoogleChrome.msi"; Arguments = "/quiet" },
-    @{ Label = "Microsoft Office 365"; Url = "https://officecdn.microsoft.com/pr/wsus/setup.exe"; FileName = "setup.exe"; Arguments = "/configure $Env:TEMP\Configuration.xml" },
-    @{ Label = "Telegram"; Url = "https://telegram.org/dl/desktop/win64"; FileName = "TelegramSetup.exe"; Arguments = "/verysilent" },
-    @{ Label = "Visual Studio Code"; Url = "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64"; FileName = "VSCodeSetup.exe"; Arguments = "/verysilent /mergetasks=!runcode" },
-    @{ Label = "Chocolatey"; Script = { Invoke-RestMethod -Uri https://community.chocolatey.org/install.ps1 | Invoke-Expression } },
-    @{ Label = "Scoop"; Script = { Invoke-Expression "& {$(Invoke-RestMethod -Uri 'https://get.scoop.sh')} -RunAsAdmin" } }
-)
-
-# Main loop to show menu and process user input
 do {
-    Show-Menu
-    $choice = Read-Host "`nEnter your selection"
+    Write-Host "Windows Setup Menu"
+    foreach ($key in $menuOptions.Keys) {
+        Write-Host "$key. $($menuOptions[$key].Name)"
+    }
+    Write-Host ""
 
-    if ($choice -eq '0') {
+    $choices = Read-Host "Choose an option (leave empty to do nothing)"
+
+    if ([string]::IsNullOrWhiteSpace($choice)) {
         break
     }
 
-    $selectedOptions = Convert-MenuSelection $choice
-    $validOptions = $selectedOptions | Where-Object { $_ -ge 1 -and $_ -le $menuOptions.Count }
-
-    if ($validOptions.Count -eq 0) {
-        Write-Host "Invalid selection. Please try again." -ForegroundColor Red
-        continue
+    foreach ($choice in ($choices -split '\s*,\s*')) {
+        if ($menuOptions.ContainsKey($choice)) {
+            & $menuOptions[$choice].Action
+        }
+        else {
+            Write-Host "Invalid choice."
+        }
     }
 
-    foreach ($option in $validOptions) {
-        Invoke-Command $option
-    }
-
+    Read-Host "Press Enter to return to the menu"
 } while ($true)
