@@ -494,6 +494,4 @@ do {
             Write-Host "Invalid choice." -ForegroundColor Yellow
         }
     }
-
-    Read-Host "Press Enter to return to the menu"
 } while ($true)
