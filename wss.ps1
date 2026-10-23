@@ -130,7 +130,12 @@ function Set-RegistrySettings {
         if (-NOT (Test-Path $key.Path)) {
             New-Item -Path $key.Path -Force | Out-Null
         }
-        New-ItemProperty -Path $key.Path -Name $key.Name -Value $key.Value -Type $key.Type -Force -ErrorAction SilentlyContinue
+        New-ItemProperty `
+            -Path $key.Path `
+            -Name $key.Name `
+            -Value $key.Value `
+            -Type $key.Type `
+            -Force -ErrorAction SilentlyContinue | Out-Null
         Write-Host "Updated registry setting $($key.Name) successfully." -ForegroundColor Green
     }
 }
@@ -458,15 +463,17 @@ $menuOptions = @{
 }
 
 do {
-    Write-Host "Windows Setup Menu"
-    foreach ($key in $menuOptions.Keys) {
+    Write-Host ""
+    Write-Host "Windows Setup Menu" -FOregroundColor Cyan
+    Write-Host "-------------------`n" -ForegroundColor Cyan
+    foreach ($key in ($menuOptions.Keys | Sort-Object { [int]$_ })) {
         Write-Host "$key. $($menuOptions[$key].Name)"
     }
     Write-Host ""
 
     $choices = Read-Host "Choose an option (leave empty to do nothing)"
 
-    if ([string]::IsNullOrWhiteSpace($choice)) {
+    if ([string]::IsNullOrWhiteSpace($choices)) {
         break
     }
 
