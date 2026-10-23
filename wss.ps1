@@ -466,23 +466,32 @@ do {
     Write-Host ""
     Write-Host "Windows Setup Menu" -ForegroundColor Cyan
     Write-Host "-------------------`n" -ForegroundColor Cyan
+
     foreach ($key in ($menuOptions.Keys | Sort-Object { [int]$_ })) {
         Write-Host "$key. $($menuOptions[$key].Name)"
     }
-    Write-Host ""
 
-    $choices = Read-Host "Choose an option (leave empty to do nothing)"
+    Write-Host ""
+    $choices = Read-Host "Choose option(s), separated by commas (leave empty to do nothing)"
 
     if ([string]::IsNullOrWhiteSpace($choices)) {
         break
     }
 
-    foreach ($choice in ($choices -split '\s*,\s*')) {
+    $selectedChoices = $choices -split '\s*,\s*'
+
+    $orderedChoices = @($selectedChoices | Where-Object { $_ -ne "3" })
+
+    if ($selectedChoices -contains "3") {
+        $orderedChoices += "3"
+    }
+
+    foreach ($choice in $orderedChoices) {
         if ($menuOptions.ContainsKey($choice)) {
             & $menuOptions[$choice].Action
         }
         else {
-            Write-Host "Invalid choice."
+            Write-Host "Invalid choice." -ForegroundColor Yellow
         }
     }
 
