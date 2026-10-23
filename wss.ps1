@@ -464,7 +464,7 @@ $menuOptions = @{
 
 do {
     Write-Host ""
-    Write-Host "Windows Setup Menu" -FOregroundColor Cyan
+    Write-Host "Windows Setup Menu" -ForegroundColor Cyan
     Write-Host "-------------------`n" -ForegroundColor Cyan
     foreach ($key in ($menuOptions.Keys | Sort-Object { [int]$_ })) {
         Write-Host "$key. $($menuOptions[$key].Name)"
