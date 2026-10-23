@@ -380,6 +380,59 @@ if ($confirmRegistry -match '^(yes|y)$') {
     }
 }
 
+$confirmDebloat = Read-Host "Do you want to debloat Windows? (y/N)"
+if ($confirmDebloat -match '^(yes|y)$') {
+
+    $confirmPackages = Read-Host "Do you want to remove unnecessary packages? (y/N)"
+    if ($confirmPackages -match '^(yes|y)$') {
+        $Exceptions = 'Extension|NET|Photos|Runtime|ScreenSketch|UI\.Xaml|VCLibs|WindowsCalculator|WindowsCamera|WindowsNotepad|WindowsStore'
+        Get-AppxPackage | Where-Object {
+            $_.NonRemovable -eq $false -and
+            $_.PackageFullName -notmatch $Exceptions
+        } |
+        ForEach-Object {
+            Remove-AppxPackage -Package $_.PackageFullName
+        }
+    }
+
+    $confirmOptionalFeatures = Read-Host "Do you want to remove all removable optional features? (y/N)"
+    if ($confirmOptionalFeatures -match '^(yes|y)$') {
+        Get-WindowsCapability -Online | Where-Object { $_.State -eq 'Installed' } | ForEach-Object {
+            $name = $_.Name
+            try {
+                Remove-WindowsCapability -Online -Name $name
+                Write-Host "Successfully removed: $name"
+            }
+            catch {
+                Write-Host "Skipped removal: $name"
+            }
+        }
+    }
+
+    $confirmWindowsFeatures = Read-Host "Do you want to remove all removable windows features? (y/N)"
+    if ($confirmWindowsFeatures -match '^(yes|y)$') {
+        Get-WindowsOptionalFeature -Online | Where-Object {$_.State -eq 'Enabled'} | ForEach-Object {
+            $name = $_.FeatureName
+            try {
+                Disable-WindowsOptionalFeature -Online -NoRestart -FeatureName $name
+                Write-Host "Successfully removed: $name"
+            }
+            catch {
+                Write-Host "Skipped removal: $name"
+            }
+        }
+    }
+
+    $confirmUpdateHistory = Read-Host "Do you want to clear windows update history? (y/N)"
+    if ($confirmUpdateHistory -match '^(yes|y)$') {
+        $path = "C:\ProgramData\USOPrivate\UpdateStore"
+        Stop-Service -Name UsoSvc, wuauserv -Force -ErrorAction SilentlyContinue
+        Grant-UserAccess -FilePath "$path\store.db", "$path\store.bak" -ErrorAction SilentlyContinue
+        Remove-Item -Path "$path\store.db", "$path\store.bak", "C:\Windows\SoftwareDistribution\DataStore\Logs\edb.log" -ErrorAction SilentlyContinue
+        Start-Service -Name UsoSvc, wuauserv -ErrorAction SilentlyContinue
+    }
+}
+
 Write-Host "Please reboot your system to complete the changes.`n" -ForegroundColor Yellow
 
 # Create temporary directory
