@@ -460,8 +460,8 @@ $menuOptions = @{
     "5"  = @{ Name = "Install Telegram Desktop";     Action = { Install-TelegramDesktop } }
     "6"  = @{ Name = "Install Visual Studio Code";   Action = { Install-VisualStudioCode } }
     "7"  = @{ Name = "Remove Appx packages";         Action = { Remove-RemovableAppxPackages } }
-    "8"  = @{ Name = "Remove Optional Features";     Action = { Remove-RemovableOptionalFeatures } }
-    "9"  = @{ Name = "Disable Windows features";     Action = { Disable-WindowsFeatures } }
+    "8"  = @{ Name = "Remove Optional Features";     Action = { Remove-RemovableWindowsCapabilities } }
+    "9"  = @{ Name = "Disable Windows features";     Action = { Remove-RemovableOptionalFeatures } }
     "10" = @{ Name = "Clear Windows Update history"; Action = { Clear-WindowsUpdateHistory } }
 }
 
