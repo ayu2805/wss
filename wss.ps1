@@ -304,7 +304,7 @@ function Remove-RemovableWindowsCapabilities {
         }
 }
 
-# Disable all enabled optional features
+# Disable all enabled windows features
 function Remove-RemovableOptionalFeatures {
     Get-WindowsOptionalFeature -Online |
         Where-Object { $_.State -eq "Enabled" } |
