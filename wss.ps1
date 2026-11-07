@@ -1,4 +1,5 @@
 $ProgressPreference = "SilentlyContinue"
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 
@@ -444,7 +445,7 @@ function Install-TelegramDesktop {
 function Install-VisualStudioCode {
     Install-DownloadedApplication `
         -Name "Visual Studio Code" `
-        -Url "https://code.visualstudio.com/?build=stable&dv=win64" `
+        -Url "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64" `
         -FileName "VSCodeSetup.exe" `
         -Arguments "/verysilent /mergetasks=!runcode"
 }
